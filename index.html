@@ -1,0 +1,1615 @@
+
+
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ระบบจัดการการทำงานเจ้าหน้าที่รายวัน - กลุ่มงานระบาดวิทยา</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <script type="module">
+        import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.7.0/firebase-app.js';
+        import { getDatabase, ref, push, set, get, remove, update } from 'https://www.gstatic.com/firebasejs/10.7.0/firebase-database.js';
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyABVSPHnKroNKRKdRJVGUUnbSoo4G5caSM",
+            authDomain: "epid-employeev1.firebaseapp.com",
+            databaseURL: "https://epid-employeev1-default-rtdb.asia-southeast1.firebasedatabase.app/",
+            projectId: "epid-employeev1",
+            storageBucket: "epid-employeev1.firebasestorage.app",
+            messagingSenderId: "154704410306",
+            appId: "1:154704410306:web:5b6301055de72b9610ed5b",
+            measurementId: "G-SE72761NVF"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const database = getDatabase(app);
+        window.db = database;
+        window.dbRef = ref;
+        window.dbPush = push;
+        window.dbSet = set;
+        window.dbGet = get;
+        window.dbRemove = remove;
+        window.dbUpdate = update;
+    </script>
+    <style>
+        body { font-family: 'Prompt', sans-serif; }
+        .tab-active { background-color: #065f46; color: white; }
+        .tab-inactive { background-color: #f3f4f6; color: #374151; }
+        .card { background: white; border-radius: 12px; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1); }
+        .btn-primary { background-color: #065f46; color: white; }
+        .btn-primary:hover { background-color: #047857; }
+        .btn-secondary { background-color: #6b7280; color: white; }
+        .btn-secondary:hover { background-color: #4b5563; }
+        .input-field { border: 2px solid #d1d5db; border-radius: 8px; padding: 12px; }
+        .input-field:focus { border-color: #065f46; outline: none; }
+        .schedule-cell { width: 40px; height: 40px; border: 1px solid #d1d5db; text-align: center; cursor: pointer; }
+        .schedule-cell:hover { background-color: #f3f4f6; }
+        .evening-shift { background-color: #10b981 !important; color: white !important; z-index: 10 !important; position: relative !important; }
+        .holiday-shift { background-color: #f59e0b !important; color: white !important; z-index: 10 !important; position: relative !important; }
+        .leave { background-color: #ef4444 !important; color: white !important; z-index: 10 !important; position: relative !important; }
+        .weekend { background-color: #f3f4f6; }
+        .holiday { background-color: #f3f4f6; }
+        .weekend-header { background-color: #e5e7eb !important; color: #dc2626 !important; }
+        .holiday-header { background-color: #e5e7eb !important; color: #dc2626 !important; }
+        .work-day { background-color: #10b981 !important; color: white; }
+        .warning { background-color: #fbbf24 !important; color: white; }
+    </style>
+</head>
+<body class="bg-gray-100 min-h-screen">
+    <!-- Navigation -->
+    <nav class="bg-emerald-800 text-white p-4 shadow-lg">
+        <div class="container mx-auto">
+            <h1 class="text-2xl font-bold">ระบบจัดการการทำงานเจ้าหน้าที่รายวัน - กลุ่มงานระบาดวิทยา</h1>
+        </div>
+    </nav>
+
+    <!-- Tab Navigation -->
+    <div class="container mx-auto mt-6 px-4">
+        <div class="flex flex-wrap gap-2 mb-6">
+            <button onclick="showTab('summary')" id="tab-summary" class="px-4 py-2 rounded-lg font-medium tab-active">สรุปผลงาน</button>
+            <button onclick="showTab('record')" id="tab-record" class="px-4 py-2 rounded-lg font-medium tab-inactive">บันทึกการปฏิบัติงาน</button>
+            <button onclick="showTab('history')" id="tab-history" class="px-4 py-2 rounded-lg font-medium tab-inactive">ประวัติการบันทึก</button>
+            <button onclick="showTab('schedule')" id="tab-schedule" class="px-4 py-2 rounded-lg font-medium tab-inactive">ตารางเวร</button>
+            <button onclick="showTab('claim')" id="tab-claim" class="px-4 py-2 rounded-lg font-medium tab-inactive">ตารางเบิก</button>
+            <button onclick="showTab('employees')" id="tab-employees" class="px-4 py-2 rounded-lg font-medium tab-inactive">รายละเอียดพนักงาน</button>
+            <button onclick="showTab('tasks')" id="tab-tasks" class="px-4 py-2 rounded-lg font-medium tab-inactive">ภาระงาน</button>
+        </div>
+
+        <!-- Summary Tab -->
+        <div id="summary-tab" class="tab-content">
+            <div class="card p-6 mb-6">
+                <h2 class="text-xl font-bold text-emerald-800 mb-4">สรุปผลงาน</h2>
+                <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-4">
+                    <div>
+                        <label class="block text-sm font-medium mb-2">วันที่เริ่มต้น</label>
+                        <input type="date" id="summary-start-date" class="input-field w-full" onchange="loadSummary()">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium mb-2">วันที่สิ้นสุด</label>
+                        <input type="date" id="summary-end-date" class="input-field w-full" onchange="loadSummary()">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium mb-2">ภาระงาน</label>
+                        <div class="relative">
+                            <button type="button" id="task-dropdown-btn" class="input-field w-full text-left flex justify-between items-center" onclick="toggleTaskDropdown()">
+                                <span id="task-selection-text">ทั้งหมด</span>
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+                                </svg>
+                            </button>
+                            <div id="task-dropdown" class="hidden absolute z-10 w-full bg-white border border-gray-300 rounded-lg shadow-lg mt-1 max-h-60 overflow-y-auto">
+                                <div class="p-2">
+                                    <label class="flex items-center p-2 hover:bg-gray-50 rounded cursor-pointer">
+                                        <input type="checkbox" id="select-all-tasks" class="mr-2" onchange="toggleAllTasks()" checked>
+                                        <span class="font-medium">ทั้งหมด</span>
+                                    </label>
+                                    <div id="task-checkboxes"></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium mb-2">บุคลากร</label>
+                        <div class="relative">
+                            <button type="button" id="person-dropdown-btn" class="input-field w-full text-left flex justify-between items-center" onclick="togglePersonDropdown()">
+                                <span id="person-selection-text">ทั้งหมด</span>
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+                                </svg>
+                            </button>
+                            <div id="person-dropdown" class="hidden absolute z-10 w-full bg-white border border-gray-300 rounded-lg shadow-lg mt-1 max-h-60 overflow-y-auto">
+                                <div class="p-2">
+                                    <label class="flex items-center p-2 hover:bg-gray-50 rounded cursor-pointer">
+                                        <input type="checkbox" id="select-all-persons" class="mr-2" onchange="toggleAllPersons()" checked>
+                                        <span class="font-medium">ทั้งหมด</span>
+                                    </label>
+                                    <div id="person-checkboxes"></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="flex gap-2 mb-4">
+                    <button onclick="loadSummary()" class="btn-primary px-4 py-2 rounded-lg">แสดงสรุป</button>
+                    <button onclick="exportSummary()" class="btn-secondary px-4 py-2 rounded-lg">ส่งออก Excel</button>
+                </div>
+                <div id="summary-results" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4"></div>
+            </div>
+        </div>
+
+        <!-- Record Tab -->
+        <div id="record-tab" class="tab-content hidden">
+            <div class="card p-6 mb-6">
+                <h2 class="text-xl font-bold text-emerald-800 mb-4">บันทึกการปฏิบัติงาน</h2>
+                <form id="record-form" class="space-y-4">
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-sm font-medium mb-2">ชื่อ-นามสกุล</label>
+                            <select id="record-employee" class="input-field w-full" required>
+                                <option value="">เลือกพนักงาน</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium mb-2">วันที่</label>
+                            <input type="date" id="record-date" class="input-field w-full" required>
+                        </div>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium mb-2">ประเภทการบันทึก</label>
+                        <select id="record-type" class="input-field w-full" required onchange="toggleClaimDate()">
+                            <option value="">เลือกประเภท</option>
+                            <option value="normal">วันทำงานปกติ</option>
+                            <option value="evening">เวรเย็น</option>
+                            <option value="holiday">เวรวันหยุด</option>
+                        </select>
+                    </div>
+                    <div id="claim-date-section" class="hidden">
+                        <label class="block text-sm font-medium mb-2">วันที่เบิก</label>
+                        <input type="date" id="claim-date" class="input-field w-full">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium mb-2">ภาระงาน</label>
+                        <div id="task-entries">
+                            <div class="task-entry grid grid-cols-1 md:grid-cols-3 gap-2 mb-2">
+                                <select class="task-select input-field">
+                                    <option value="">เลือกภาระงาน</option>
+                                </select>
+                                <input type="number" class="task-amount input-field" placeholder="ปริมาณงาน" min="0">
+                                <button type="button" onclick="removeTaskEntry(this)" class="btn-secondary px-3 py-2 rounded-lg">ลบ</button>
+                            </div>
+                        </div>
+                        <button type="button" onclick="addTaskEntry()" class="btn-primary px-4 py-2 rounded-lg mt-2">เพิ่มภาระงาน</button>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium mb-2">อื่นๆ</label>
+                        <textarea id="record-other" class="input-field w-full" rows="3" placeholder="รายละเอียดเพิ่มเติม"></textarea>
+                    </div>
+                    <button type="submit" class="btn-primary px-6 py-3 rounded-lg">บันทึกข้อมูล</button>
+                </form>
+            </div>
+        </div>
+
+        <!-- History Tab -->
+        <div id="history-tab" class="tab-content hidden">
+            <div class="card p-6 mb-6">
+                <h2 class="text-xl font-bold text-emerald-800 mb-4">ประวัติการบันทึกการปฏิบัติงาน</h2>
+                <div class="flex gap-2 mb-4">
+                    <button onclick="loadHistory()" class="btn-primary px-4 py-2 rounded-lg">โหลดข้อมูล</button>
+                    <button onclick="exportHistory()" class="btn-secondary px-4 py-2 rounded-lg">ส่งออก Excel</button>
+                </div>
+                <div id="history-results" class="space-y-4"></div>
+            </div>
+        </div>
+
+        <!-- Schedule Tab -->
+        <div id="schedule-tab" class="tab-content hidden">
+            <div class="card p-6 mb-6">
+                <h2 class="text-xl font-bold text-emerald-800 mb-4">ตารางเวร</h2>
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+                    <div>
+                        <label class="block text-sm font-medium mb-2">เดือน</label>
+                        <select id="schedule-month" class="input-field w-full">
+                            <option value="1">มกราคม</option>
+                            <option value="2">กุมภาพันธ์</option>
+                            <option value="3">มีนาคม</option>
+                            <option value="4">เมษายน</option>
+                            <option value="5">พฤษภาคม</option>
+                            <option value="6">มิถุนายน</option>
+                            <option value="7">กรกฎาคม</option>
+                            <option value="8">สิงหาคม</option>
+                            <option value="9">กันยายน</option>
+                            <option value="10">ตุลาคม</option>
+                            <option value="11">พฤศจิกายน</option>
+                            <option value="12">ธันวาคม</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium mb-2">ปี</label>
+                        <input type="number" id="schedule-year" class="input-field w-full" value="2024" min="2020" max="2030">
+                    </div>
+                    <div class="flex items-end">
+                        <button onclick="generateSchedule()" class="btn-primary px-4 py-2 rounded-lg">สร้างตาราง</button>
+                    </div>
+                </div>
+                <div class="mb-4">
+                    <h3 class="text-lg font-semibold mb-2">จัดการวันหยุด</h3>
+                    <div class="flex gap-2 mb-2">
+                        <input type="date" id="holiday-date" class="input-field">
+                        <input type="text" id="holiday-desc" class="input-field" placeholder="รายละเอียดวันหยุด">
+                        <button onclick="addHoliday()" class="btn-primary px-4 py-2 rounded-lg">เพิ่มวันหยุด</button>
+                    </div>
+                    <div id="holiday-list" class="text-sm text-gray-600"></div>
+                </div>
+                <div class="flex gap-2 mb-4">
+                    <button onclick="exportSchedule()" class="btn-secondary px-4 py-2 rounded-lg">ส่งออก Excel</button>
+                </div>
+                <div id="schedule-table" class="overflow-x-auto"></div>
+            </div>
+        </div>
+
+        <!-- Claim Tab -->
+        <div id="claim-tab" class="tab-content hidden">
+            <div class="card p-6 mb-6">
+                <h2 class="text-xl font-bold text-emerald-800 mb-4">ตารางเบิก</h2>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                    <div>
+                        <label class="block text-sm font-medium mb-2">เดือน</label>
+                        <select id="claim-month" class="input-field w-full">
+                            <option value="1">มกราคม</option>
+                            <option value="2">กุมภาพันธ์</option>
+                            <option value="3">มีนาคม</option>
+                            <option value="4">เมษายน</option>
+                            <option value="5">พฤษภาคม</option>
+                            <option value="6">มิถุนายน</option>
+                            <option value="7">กรกฎาคม</option>
+                            <option value="8">สิงหาคม</option>
+                            <option value="9">กันยายน</option>
+                            <option value="10">ตุลาคม</option>
+                            <option value="11">พฤศจิกายน</option>
+                            <option value="12">ธันวาคม</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium mb-2">ปี</label>
+                        <input type="number" id="claim-year" class="input-field w-full" value="2024" min="2020" max="2030">
+                    </div>
+                </div>
+                <div class="flex gap-2 mb-4">
+                    <button onclick="generateClaimTable()" class="btn-primary px-4 py-2 rounded-lg">สร้างตาราง</button>
+                    <button onclick="exportClaim()" class="btn-secondary px-4 py-2 rounded-lg">ส่งออก Excel</button>
+                </div>
+                <div id="claim-table" class="overflow-x-auto"></div>
+            </div>
+        </div>
+
+        <!-- Employees Tab -->
+        <div id="employees-tab" class="tab-content hidden">
+            <div class="card p-6 mb-6">
+                <h2 class="text-xl font-bold text-emerald-800 mb-4">รายละเอียดพนักงาน</h2>
+                <div class="flex gap-2 mb-4">
+                    <button onclick="showAddEmployeeForm()" class="btn-primary px-4 py-2 rounded-lg">เพิ่มพนักงาน</button>
+                    <button onclick="exportEmployees()" class="btn-secondary px-4 py-2 rounded-lg">ส่งออก Excel</button>
+                </div>
+                <div id="add-employee-form" class="hidden mb-6 p-4 bg-gray-50 rounded-lg">
+                    <h3 class="text-lg font-semibold mb-4">เพิ่มพนักงานใหม่</h3>
+                    <form id="employee-form" class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <input type="text" id="emp-firstname" class="input-field" placeholder="ชื่อ" required>
+                        <input type="text" id="emp-lastname" class="input-field" placeholder="นามสกุล" required>
+                        <input type="text" id="emp-position" class="input-field" placeholder="ตำแหน่ง" required>
+                        <input type="tel" id="emp-phone" class="input-field" placeholder="เบอร์โทรศัพท์" required>
+                        <div class="md:col-span-2">
+                            <button type="submit" class="btn-primary px-4 py-2 rounded-lg mr-2">บันทึก</button>
+                            <button type="button" onclick="hideAddEmployeeForm()" class="btn-secondary px-4 py-2 rounded-lg">ยกเลิก</button>
+                        </div>
+                    </form>
+                </div>
+                <div id="employees-list" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4"></div>
+            </div>
+        </div>
+
+        <!-- Tasks Tab -->
+        <div id="tasks-tab" class="tab-content hidden">
+            <div class="card p-6 mb-6">
+                <h2 class="text-xl font-bold text-emerald-800 mb-4">ภาระงาน</h2>
+                <div class="flex gap-2 mb-4">
+                    <button onclick="showAddTaskForm()" class="btn-primary px-4 py-2 rounded-lg">เพิ่มภาระงาน</button>
+                    <button onclick="exportTasks()" class="btn-secondary px-4 py-2 rounded-lg">ส่งออก Excel</button>
+                </div>
+                <div id="add-task-form" class="hidden mb-6 p-4 bg-gray-50 rounded-lg">
+                    <h3 class="text-lg font-semibold mb-4">เพิ่มภาระงานใหม่</h3>
+                    <form id="task-form" class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <input type="text" id="task-name" class="input-field" placeholder="ชื่อภาระงาน" required>
+                        <input type="text" id="task-unit" class="input-field" placeholder="หน่วย" required>
+                        <div class="md:col-span-2">
+                            <button type="submit" class="btn-primary px-4 py-2 rounded-lg mr-2">บันทึก</button>
+                            <button type="button" onclick="hideAddTaskForm()" class="btn-secondary px-4 py-2 rounded-lg">ยกเลิก</button>
+                        </div>
+                    </form>
+                </div>
+                <div id="tasks-list" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4"></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Global variables
+        let employees = {};
+        let tasks = {};
+        let workRecords = {};
+        let holidays = {};
+        let currentScheduleData = {};
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', function() {
+            loadEmployees();
+            loadTasks();
+            loadWorkRecords();
+            loadHolidays();
+            
+            // Set current date
+            document.getElementById('record-date').value = new Date().toISOString().split('T')[0];
+            
+            // Set current month/year
+            const now = new Date();
+            document.getElementById('schedule-month').value = now.getMonth() + 1;
+            document.getElementById('schedule-year').value = now.getFullYear();
+            document.getElementById('claim-month').value = now.getMonth() + 1;
+            document.getElementById('claim-year').value = now.getFullYear();
+            
+            // Set default date range for summary (current month)
+            const firstDay = new Date(now.getFullYear(), now.getMonth(), 1);
+            const lastDay = new Date(now.getFullYear(), now.getMonth() + 1, 0);
+            document.getElementById('summary-start-date').value = firstDay.toISOString().split('T')[0];
+            document.getElementById('summary-end-date').value = lastDay.toISOString().split('T')[0];
+            
+            // Auto-load summary after data is loaded
+            setTimeout(() => {
+                loadSummary();
+            }, 500);
+        });
+
+        // Tab management
+        function showTab(tabName) {
+            // Hide all tabs
+            document.querySelectorAll('.tab-content').forEach(tab => tab.classList.add('hidden'));
+            document.querySelectorAll('[id^="tab-"]').forEach(btn => {
+                btn.classList.remove('tab-active');
+                btn.classList.add('tab-inactive');
+            });
+            
+            // Show selected tab
+            document.getElementById(tabName + '-tab').classList.remove('hidden');
+            document.getElementById('tab-' + tabName).classList.remove('tab-inactive');
+            document.getElementById('tab-' + tabName).classList.add('tab-active');
+            
+            // Load data for specific tabs
+            if (tabName === 'employees') loadEmployeesList();
+            if (tabName === 'tasks') loadTasksList();
+            if (tabName === 'summary') loadSummaryOptions();
+            if (tabName === 'history') loadHistory();
+            if (tabName === 'schedule') generateSchedule();
+            if (tabName === 'claim') generateClaimTable();
+        }
+
+        // Firebase operations
+        async function loadEmployees() {
+            try {
+                const snapshot = await window.dbGet(window.dbRef(window.db, 'employees'));
+                employees = snapshot.val() || {};
+                updateEmployeeSelects();
+            } catch (error) {
+                console.error('Error loading employees:', error);
+            }
+        }
+
+        async function loadTasks() {
+            try {
+                const snapshot = await window.dbGet(window.dbRef(window.db, 'tasks'));
+                tasks = snapshot.val() || {};
+                updateTaskSelects();
+            } catch (error) {
+                console.error('Error loading tasks:', error);
+            }
+        }
+
+        async function loadWorkRecords() {
+            try {
+                const snapshot = await window.dbGet(window.dbRef(window.db, 'workRecords'));
+                workRecords = snapshot.val() || {};
+            } catch (error) {
+                console.error('Error loading work records:', error);
+            }
+        }
+
+        async function loadHolidays() {
+            try {
+                const snapshot = await window.dbGet(window.dbRef(window.db, 'holidays'));
+                holidays = snapshot.val() || {};
+                updateHolidayList();
+            } catch (error) {
+                console.error('Error loading holidays:', error);
+            }
+        }
+
+        // Employee management
+        function updateEmployeeSelects() {
+            const recordSelect = document.getElementById('record-employee');
+            if (recordSelect) {
+                recordSelect.innerHTML = '<option value="">เลือกพนักงาน</option>';
+                Object.entries(employees).forEach(([id, emp]) => {
+                    const option = document.createElement('option');
+                    option.value = id;
+                    option.textContent = `${emp.firstname} ${emp.lastname}`;
+                    recordSelect.appendChild(option);
+                });
+            }
+            
+            // Update person checkboxes for summary
+            updatePersonCheckboxes();
+        }
+        
+        function updatePersonCheckboxes() {
+            const container = document.getElementById('person-checkboxes');
+            if (!container) return;
+            
+            container.innerHTML = '';
+            
+            Object.entries(employees).forEach(([id, emp]) => {
+                const label = document.createElement('label');
+                label.className = 'flex items-center p-2 hover:bg-gray-50 rounded cursor-pointer';
+                label.innerHTML = `
+                    <input type="checkbox" class="person-checkbox mr-2" value="${id}" onchange="updatePersonSelection()">
+                    <span>${emp.firstname} ${emp.lastname}</span>
+                `;
+                container.appendChild(label);
+            });
+        }
+        
+        function togglePersonDropdown() {
+            const dropdown = document.getElementById('person-dropdown');
+            dropdown.classList.toggle('hidden');
+        }
+        
+        function toggleAllPersons() {
+            const selectAll = document.getElementById('select-all-persons');
+            const checkboxes = document.querySelectorAll('.person-checkbox');
+            
+            checkboxes.forEach(checkbox => {
+                checkbox.checked = selectAll.checked;
+            });
+            
+            updatePersonSelection();
+        }
+        
+        function updatePersonSelection() {
+            const selectAll = document.getElementById('select-all-persons');
+            const checkboxes = document.querySelectorAll('.person-checkbox');
+            const checkedBoxes = document.querySelectorAll('.person-checkbox:checked');
+            const selectionText = document.getElementById('person-selection-text');
+            
+            if (checkedBoxes.length === 0) {
+                selectAll.checked = true;
+                selectionText.textContent = 'ทั้งหมด';
+            } else if (checkedBoxes.length === checkboxes.length) {
+                selectAll.checked = true;
+                selectionText.textContent = 'ทั้งหมด';
+            } else {
+                selectAll.checked = false;
+                if (checkedBoxes.length === 1) {
+                    const personId = checkedBoxes[0].value;
+                    const personInfo = employees[personId];
+                    selectionText.textContent = personInfo ? `${personInfo.firstname} ${personInfo.lastname}` : 'เลือกแล้ว 1 คน';
+                } else {
+                    selectionText.textContent = `เลือกแล้ว ${checkedBoxes.length} คน`;
+                }
+            }
+        }
+        
+        function getSelectedPersons() {
+            const selectAll = document.getElementById('select-all-persons');
+            if (selectAll.checked) {
+                const checkboxes = document.querySelectorAll('.person-checkbox');
+                if (document.querySelectorAll('.person-checkbox:checked').length === 0) {
+                    return 'all';
+                }
+            }
+            
+            const checkedBoxes = document.querySelectorAll('.person-checkbox:checked');
+            return Array.from(checkedBoxes).map(cb => cb.value);
+        }
+
+        function showAddEmployeeForm() {
+            document.getElementById('add-employee-form').classList.remove('hidden');
+        }
+
+        function hideAddEmployeeForm() {
+            document.getElementById('add-employee-form').classList.add('hidden');
+            document.getElementById('employee-form').reset();
+            
+            // Reset form button
+            const form = document.getElementById('employee-form');
+            const submitBtn = form.querySelector('button[type="submit"]');
+            submitBtn.textContent = 'บันทึก';
+            submitBtn.onclick = null;
+        }
+
+        document.getElementById('employee-form').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            const employeeData = {
+                firstname: document.getElementById('emp-firstname').value,
+                lastname: document.getElementById('emp-lastname').value,
+                position: document.getElementById('emp-position').value,
+                phone: document.getElementById('emp-phone').value
+            };
+            
+            try {
+                await window.dbPush(window.dbRef(window.db, 'employees'), employeeData);
+                hideAddEmployeeForm();
+                loadEmployees();
+                loadEmployeesList();
+                alert('เพิ่มพนักงานสำเร็จ');
+            } catch (error) {
+                console.error('Error adding employee:', error);
+                alert('เกิดข้อผิดพลาดในการเพิ่มพนักงาน');
+            }
+        });
+
+        function loadEmployeesList() {
+            const container = document.getElementById('employees-list');
+            container.innerHTML = '';
+            
+            Object.entries(employees).forEach(([id, emp]) => {
+                const card = document.createElement('div');
+                card.className = 'card p-4';
+                card.innerHTML = `
+                    <h3 class="font-semibold text-emerald-800">${emp.firstname} ${emp.lastname}</h3>
+                    <p class="text-gray-600">${emp.position}</p>
+                    <p class="text-gray-600">${emp.phone}</p>
+                    <div class="mt-3 flex gap-2">
+                        <button onclick="editEmployee('${id}')" class="btn-primary px-3 py-1 rounded text-sm">แก้ไข</button>
+                        <button onclick="deleteEmployee('${id}')" class="bg-red-500 hover:bg-red-600 text-white px-3 py-1 rounded text-sm">ลบ</button>
+                    </div>
+                `;
+                container.appendChild(card);
+            });
+        }
+
+        function editEmployee(id) {
+            const emp = employees[id];
+            if (!emp) return;
+            
+            // Fill form with existing data
+            document.getElementById('emp-firstname').value = emp.firstname;
+            document.getElementById('emp-lastname').value = emp.lastname;
+            document.getElementById('emp-position').value = emp.position;
+            document.getElementById('emp-phone').value = emp.phone;
+            
+            // Show form and change button text
+            showAddEmployeeForm();
+            const form = document.getElementById('employee-form');
+            const submitBtn = form.querySelector('button[type="submit"]');
+            submitBtn.textContent = 'อัปเดต';
+            submitBtn.onclick = function(e) {
+                e.preventDefault();
+                updateEmployee(id);
+            };
+        }
+
+        async function updateEmployee(id) {
+            const employeeData = {
+                firstname: document.getElementById('emp-firstname').value,
+                lastname: document.getElementById('emp-lastname').value,
+                position: document.getElementById('emp-position').value,
+                phone: document.getElementById('emp-phone').value
+            };
+            
+            try {
+                await window.dbUpdate(window.dbRef(window.db, `employees/${id}`), employeeData);
+                hideAddEmployeeForm();
+                loadEmployees();
+                loadEmployeesList();
+                alert('อัปเดตพนักงานสำเร็จ');
+                
+                // Reset form
+                const form = document.getElementById('employee-form');
+                const submitBtn = form.querySelector('button[type="submit"]');
+                submitBtn.textContent = 'บันทึก';
+                submitBtn.onclick = null;
+            } catch (error) {
+                console.error('Error updating employee:', error);
+                alert('เกิดข้อผิดพลาดในการอัปเดตพนักงาน');
+            }
+        }
+
+        async function deleteEmployee(id) {
+            if (confirm('ต้องการลบพนักงานนี้หรือไม่?')) {
+                try {
+                    await window.dbRemove(window.dbRef(window.db, `employees/${id}`));
+                    delete employees[id];
+                    loadEmployees();
+                    loadEmployeesList();
+                    alert('ลบพนักงานสำเร็จ');
+                } catch (error) {
+                    console.error('Error deleting employee:', error);
+                    alert('เกิดข้อผิดพลาดในการลบพนักงาน');
+                }
+            }
+        }
+
+        // Task management
+        function updateTaskSelects() {
+            const selects = document.querySelectorAll('.task-select');
+            selects.forEach(select => {
+                select.innerHTML = '<option value="">เลือกภาระงาน</option>';
+                
+                Object.entries(tasks).forEach(([id, task]) => {
+                    const option = document.createElement('option');
+                    option.value = id;
+                    option.textContent = `${task.name} (${task.unit})`;
+                    select.appendChild(option);
+                });
+            });
+            
+            // Update task checkboxes for summary
+            updateTaskCheckboxes();
+        }
+        
+        function updateTaskCheckboxes() {
+            const container = document.getElementById('task-checkboxes');
+            if (!container) return;
+            
+            container.innerHTML = '';
+            
+            Object.entries(tasks).forEach(([id, task]) => {
+                const label = document.createElement('label');
+                label.className = 'flex items-center p-2 hover:bg-gray-50 rounded cursor-pointer';
+                label.innerHTML = `
+                    <input type="checkbox" class="task-checkbox mr-2" value="${id}" onchange="updateTaskSelection()">
+                    <span>${task.name} (${task.unit})</span>
+                `;
+                container.appendChild(label);
+            });
+            
+            // Add "อื่น ๆ" option
+            const otherLabel = document.createElement('label');
+            otherLabel.className = 'flex items-center p-2 hover:bg-gray-50 rounded cursor-pointer';
+            otherLabel.innerHTML = `
+                <input type="checkbox" class="task-checkbox mr-2" value="other" onchange="updateTaskSelection()">
+                <span>อื่น ๆ</span>
+            `;
+            container.appendChild(otherLabel);
+        }
+        
+        function toggleTaskDropdown() {
+            const dropdown = document.getElementById('task-dropdown');
+            dropdown.classList.toggle('hidden');
+        }
+        
+        function toggleAllTasks() {
+            const selectAll = document.getElementById('select-all-tasks');
+            const checkboxes = document.querySelectorAll('.task-checkbox');
+            
+            checkboxes.forEach(checkbox => {
+                checkbox.checked = selectAll.checked;
+            });
+            
+            updateTaskSelection();
+        }
+        
+        function updateTaskSelection() {
+            const selectAll = document.getElementById('select-all-tasks');
+            const checkboxes = document.querySelectorAll('.task-checkbox');
+            const checkedBoxes = document.querySelectorAll('.task-checkbox:checked');
+            const selectionText = document.getElementById('task-selection-text');
+            
+            if (checkedBoxes.length === 0) {
+                selectAll.checked = true;
+                selectionText.textContent = 'ทั้งหมด';
+            } else if (checkedBoxes.length === checkboxes.length) {
+                selectAll.checked = true;
+                selectionText.textContent = 'ทั้งหมด';
+            } else {
+                selectAll.checked = false;
+                if (checkedBoxes.length === 1) {
+                    const taskId = checkedBoxes[0].value;
+                    const taskInfo = tasks[taskId];
+                    selectionText.textContent = taskInfo ? taskInfo.name : 'เลือกแล้ว 1 รายการ';
+                } else {
+                    selectionText.textContent = `เลือกแล้ว ${checkedBoxes.length} รายการ`;
+                }
+            }
+        }
+        
+        function getSelectedTasks() {
+            const selectAll = document.getElementById('select-all-tasks');
+            if (selectAll.checked) {
+                const checkboxes = document.querySelectorAll('.task-checkbox');
+                if (document.querySelectorAll('.task-checkbox:checked').length === 0) {
+                    return 'all';
+                }
+            }
+            
+            const checkedBoxes = document.querySelectorAll('.task-checkbox:checked');
+            return Array.from(checkedBoxes).map(cb => cb.value);
+        }
+        
+        // Close dropdown when clicking outside
+        document.addEventListener('click', function(event) {
+            const taskDropdown = document.getElementById('task-dropdown');
+            const taskButton = document.getElementById('task-dropdown-btn');
+            const personDropdown = document.getElementById('person-dropdown');
+            const personButton = document.getElementById('person-dropdown-btn');
+            
+            if (taskDropdown && taskButton && !taskDropdown.contains(event.target) && !taskButton.contains(event.target)) {
+                taskDropdown.classList.add('hidden');
+            }
+            
+            if (personDropdown && personButton && !personDropdown.contains(event.target) && !personButton.contains(event.target)) {
+                personDropdown.classList.add('hidden');
+            }
+        });
+
+        function showAddTaskForm() {
+            document.getElementById('add-task-form').classList.remove('hidden');
+        }
+
+        function hideAddTaskForm() {
+            document.getElementById('add-task-form').classList.add('hidden');
+            document.getElementById('task-form').reset();
+            
+            // Reset form button
+            const form = document.getElementById('task-form');
+            const submitBtn = form.querySelector('button[type="submit"]');
+            submitBtn.textContent = 'บันทึก';
+            submitBtn.onclick = null;
+        }
+
+        document.getElementById('task-form').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            const taskData = {
+                name: document.getElementById('task-name').value,
+                unit: document.getElementById('task-unit').value
+            };
+            
+            try {
+                await window.dbPush(window.dbRef(window.db, 'tasks'), taskData);
+                hideAddTaskForm();
+                loadTasks();
+                loadTasksList();
+                alert('เพิ่มภาระงานสำเร็จ');
+            } catch (error) {
+                console.error('Error adding task:', error);
+                alert('เกิดข้อผิดพลาดในการเพิ่มภาระงาน');
+            }
+        });
+
+        function loadTasksList() {
+            const container = document.getElementById('tasks-list');
+            container.innerHTML = '';
+            
+            Object.entries(tasks).forEach(([id, task]) => {
+                const card = document.createElement('div');
+                card.className = 'card p-4';
+                card.innerHTML = `
+                    <h3 class="font-semibold text-emerald-800">${task.name}</h3>
+                    <p class="text-gray-600">หน่วย: ${task.unit}</p>
+                    <div class="mt-3 flex gap-2">
+                        <button onclick="editTask('${id}')" class="btn-primary px-3 py-1 rounded text-sm">แก้ไข</button>
+                        <button onclick="deleteTask('${id}')" class="bg-red-500 hover:bg-red-600 text-white px-3 py-1 rounded text-sm">ลบ</button>
+                    </div>
+                `;
+                container.appendChild(card);
+            });
+        }
+
+        function editTask(id) {
+            const task = tasks[id];
+            if (!task) return;
+            
+            // Fill form with existing data
+            document.getElementById('task-name').value = task.name;
+            document.getElementById('task-unit').value = task.unit;
+            
+            // Show form and change button text
+            showAddTaskForm();
+            const form = document.getElementById('task-form');
+            const submitBtn = form.querySelector('button[type="submit"]');
+            submitBtn.textContent = 'อัปเดต';
+            submitBtn.onclick = function(e) {
+                e.preventDefault();
+                updateTask(id);
+            };
+        }
+
+        async function updateTask(id) {
+            const taskData = {
+                name: document.getElementById('task-name').value,
+                unit: document.getElementById('task-unit').value
+            };
+            
+            try {
+                await window.dbUpdate(window.dbRef(window.db, `tasks/${id}`), taskData);
+                hideAddTaskForm();
+                loadTasks();
+                loadTasksList();
+                alert('อัปเดตภาระงานสำเร็จ');
+                
+                // Reset form
+                const form = document.getElementById('task-form');
+                const submitBtn = form.querySelector('button[type="submit"]');
+                submitBtn.textContent = 'บันทึก';
+                submitBtn.onclick = null;
+            } catch (error) {
+                console.error('Error updating task:', error);
+                alert('เกิดข้อผิดพลาดในการอัปเดตภาระงาน');
+            }
+        }
+
+        async function deleteTask(id) {
+            if (confirm('ต้องการลบภาระงานนี้หรือไม่?')) {
+                try {
+                    await window.dbRemove(window.dbRef(window.db, `tasks/${id}`));
+                    loadTasks();
+                    loadTasksList();
+                    alert('ลบภาระงานสำเร็จ');
+                } catch (error) {
+                    console.error('Error deleting task:', error);
+                    alert('เกิดข้อผิดพลาดในการลบภาระงาน');
+                }
+            }
+        }
+
+        // Work record management
+        function toggleClaimDate() {
+            const recordType = document.getElementById('record-type').value;
+            const claimSection = document.getElementById('claim-date-section');
+            
+            if (recordType === 'evening' || recordType === 'holiday') {
+                claimSection.classList.remove('hidden');
+                document.getElementById('claim-date').required = true;
+            } else {
+                claimSection.classList.add('hidden');
+                document.getElementById('claim-date').required = false;
+            }
+        }
+
+        function addTaskEntry() {
+            const container = document.getElementById('task-entries');
+            const entry = document.createElement('div');
+            entry.className = 'task-entry grid grid-cols-1 md:grid-cols-3 gap-2 mb-2';
+            entry.innerHTML = `
+                <select class="task-select input-field">
+                    <option value="">เลือกภาระงาน</option>
+                </select>
+                <input type="number" class="task-amount input-field" placeholder="ปริมาณงาน" min="0">
+                <button type="button" onclick="removeTaskEntry(this)" class="btn-secondary px-3 py-2 rounded-lg">ลบ</button>
+            `;
+            container.appendChild(entry);
+            
+            // Update task options for new entry
+            const select = entry.querySelector('.task-select');
+            Object.entries(tasks).forEach(([id, task]) => {
+                const option = document.createElement('option');
+                option.value = id;
+                option.textContent = `${task.name} (${task.unit})`;
+                select.appendChild(option);
+            });
+        }
+
+        function removeTaskEntry(button) {
+            const entries = document.querySelectorAll('.task-entry');
+            if (entries.length > 1) {
+                button.closest('.task-entry').remove();
+            }
+        }
+
+        document.getElementById('record-form').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            const taskEntries = [];
+            document.querySelectorAll('.task-entry').forEach(entry => {
+                const taskId = entry.querySelector('.task-select').value;
+                const amount = entry.querySelector('.task-amount').value;
+                if (taskId && amount) {
+                    taskEntries.push({ taskId, amount: parseFloat(amount) });
+                }
+            });
+            
+            const recordData = {
+                employeeId: document.getElementById('record-employee').value,
+                date: document.getElementById('record-date').value,
+                type: document.getElementById('record-type').value,
+                claimDate: document.getElementById('claim-date').value || null,
+                tasks: taskEntries,
+                other: document.getElementById('record-other').value,
+                timestamp: Date.now()
+            };
+            
+            try {
+                await window.dbPush(window.dbRef(window.db, 'workRecords'), recordData);
+                document.getElementById('record-form').reset();
+                toggleClaimDate();
+                alert('บันทึกข้อมูลสำเร็จ');
+                loadWorkRecords();
+                // Auto-refresh summary if it's currently visible
+                if (!document.getElementById('summary-tab').classList.contains('hidden')) {
+                    setTimeout(() => loadSummary(), 200);
+                }
+                // Auto-refresh history if it's currently visible
+                if (!document.getElementById('history-tab').classList.contains('hidden')) {
+                    setTimeout(() => loadHistory(), 200);
+                }
+            } catch (error) {
+                console.error('Error saving work record:', error);
+                alert('เกิดข้อผิดพลาดในการบันทึกข้อมูล');
+            }
+        });
+
+        // History management
+        function loadHistory() {
+            const container = document.getElementById('history-results');
+            container.innerHTML = '';
+            
+            const records = Object.entries(workRecords).sort((a, b) => b[1].timestamp - a[1].timestamp);
+            
+            records.forEach(([id, record]) => {
+                const employee = employees[record.employeeId];
+                if (!employee) return;
+                
+                const card = document.createElement('div');
+                card.className = 'card p-4';
+                
+                const typeText = {
+                    'normal': 'วันทำงานปกติ',
+                    'evening': 'เวรเย็น',
+                    'holiday': 'เวรวันหยุด'
+                };
+                
+                let tasksHtml = '';
+                if (record.tasks && record.tasks.length > 0) {
+                    tasksHtml = record.tasks.map(task => {
+                        const taskInfo = tasks[task.taskId];
+                        return taskInfo ? `${taskInfo.name}: ${task.amount} ${taskInfo.unit}` : '';
+                    }).filter(t => t).join(', ');
+                }
+                
+                card.innerHTML = `
+                    <div class="flex justify-between items-start mb-2">
+                        <h3 class="font-semibold text-emerald-800">${employee.firstname} ${employee.lastname}</h3>
+                        <div class="flex items-center gap-2">
+                            <span class="text-sm text-gray-500">${new Date(record.timestamp).toLocaleDateString('th-TH')}</span>
+                            <button onclick="deleteRecord('${id}')" class="bg-red-500 hover:bg-red-600 text-white px-2 py-1 rounded text-xs">ลบ</button>
+                        </div>
+                    </div>
+                    <p><strong>วันที่ทำงาน:</strong> ${new Date(record.date).toLocaleDateString('th-TH')}</p>
+                    <p><strong>ประเภท:</strong> ${typeText[record.type]}</p>
+                    ${record.claimDate ? `<p><strong>วันที่เบิก:</strong> ${new Date(record.claimDate).toLocaleDateString('th-TH')}</p>` : ''}
+                    ${tasksHtml ? `<p><strong>ภาระงาน:</strong> ${tasksHtml}</p>` : ''}
+                    ${record.other ? `<p><strong>อื่นๆ:</strong> ${record.other}</p>` : ''}
+                `;
+                container.appendChild(card);
+            });
+        }
+
+        // Summary management
+        function loadSummaryOptions() {
+            updateEmployeeSelects();
+            updateTaskSelects();
+            // Auto-load summary when tab is opened
+            setTimeout(() => {
+                loadSummary();
+            }, 100);
+        }
+
+        function loadSummary() {
+            const startDate = document.getElementById('summary-start-date').value;
+            const endDate = document.getElementById('summary-end-date').value;
+            const selectedTasks = getSelectedTasks();
+            const selectedPersons = getSelectedPersons();
+            
+            const container = document.getElementById('summary-results');
+            container.innerHTML = '';
+            
+            // Validate date range
+            if (!startDate || !endDate) {
+                alert('กรุณาเลือกวันที่เริ่มต้นและวันที่สิ้นสุด');
+                return;
+            }
+            
+            if (startDate > endDate) {
+                alert('วันที่เริ่มต้นต้องไม่เกินวันที่สิ้นสุด');
+                return;
+            }
+            
+            // Process work records for summary
+            const summaryData = {};
+            const otherActivities = [];
+            
+            Object.entries(workRecords).forEach(([id, record]) => {
+                // Check if person should be included based on selection
+                if (selectedPersons !== 'all' && Array.isArray(selectedPersons) && !selectedPersons.includes(record.employeeId)) return;
+                
+                // Check if record date is within the selected range
+                if (record.date < startDate || record.date > endDate) return;
+                
+                const employee = employees[record.employeeId];
+                if (!employee) return;
+                
+                // Process regular tasks
+                if (record.tasks) {
+                    record.tasks.forEach(task => {
+                        // Check if task should be included based on selection
+                        if (selectedTasks !== 'all' && Array.isArray(selectedTasks) && !selectedTasks.includes(task.taskId)) return;
+                        
+                        const taskInfo = tasks[task.taskId];
+                        if (!taskInfo) return;
+                        
+                        const taskKey = taskInfo.name;
+                        if (!summaryData[taskKey]) {
+                            summaryData[taskKey] = { amount: 0, unit: taskInfo.unit };
+                        }
+                        summaryData[taskKey].amount += task.amount;
+                    });
+                }
+                
+                // Process "อื่น ๆ" activities
+                if (record.other && record.other.trim() && 
+                    (selectedTasks === 'all' || (Array.isArray(selectedTasks) && selectedTasks.includes('other')))) {
+                    otherActivities.push({
+                        employee: `${employee.firstname} ${employee.lastname}`,
+                        date: record.date,
+                        activity: record.other.trim()
+                    });
+                }
+            });
+            
+            // Display regular task summary
+            let hasRegularTasks = false;
+            Object.entries(summaryData).forEach(([taskName, taskData]) => {
+                const card = document.createElement('div');
+                card.className = 'card p-4';
+                
+                card.innerHTML = `
+                    <h3 class="font-semibold text-emerald-800 mb-2">${taskName}</h3>
+                    <div class="flex items-baseline gap-2">
+                        <span class="text-sm text-gray-600">จำนวน:</span>
+                        <span class="text-4xl font-bold text-emerald-700">${taskData.amount}</span>
+                        <span class="text-lg text-gray-600">${taskData.unit}</span>
+                    </div>
+                `;
+                container.appendChild(card);
+                hasRegularTasks = true;
+            });
+            
+            // Display "อื่น ๆ" activities in a separate section at the bottom
+            if (otherActivities.length > 0) {
+                const otherCard = document.createElement('div');
+                otherCard.className = 'card p-4 mt-4 bg-blue-50 border-l-4 border-blue-500';
+                
+                let otherHtml = `
+                    <h3 class="font-semibold text-blue-800 mb-4">กิจกรรมอื่น ๆ</h3>
+                    <div class="space-y-2">
+                `;
+                
+                otherActivities.forEach(activity => {
+                    otherHtml += `
+                        <div class="bg-white p-3 rounded border">
+                            <div class="flex justify-between items-start">
+                                <div>
+                                    <p class="font-medium text-gray-800">${activity.employee}</p>
+                                    <p class="text-gray-600 mt-1">${activity.activity}</p>
+                                </div>
+                                <span class="text-sm text-gray-500">${new Date(activity.date).toLocaleDateString('th-TH')}</span>
+                            </div>
+                        </div>
+                    `;
+                });
+                
+                otherHtml += '</div>';
+                otherCard.innerHTML = otherHtml;
+                container.appendChild(otherCard);
+            }
+            
+            // Show message if no data found
+            if (!hasRegularTasks && otherActivities.length === 0) {
+                container.innerHTML = '<p class="text-gray-500 text-center">ไม่พบข้อมูลในช่วงเวลาที่เลือก</p>';
+            }
+        }
+
+        // Schedule management
+        async function loadScheduleData() {
+            try {
+                const snapshot = await window.dbGet(window.dbRef(window.db, 'schedules'));
+                return snapshot.val() || {};
+            } catch (error) {
+                console.error('Error loading schedule data:', error);
+                return {};
+            }
+        }
+
+        async function saveScheduleData(empId, date, shiftType) {
+            try {
+                const scheduleKey = `${empId}_${date}`;
+                if (shiftType) {
+                    await window.dbSet(window.dbRef(window.db, `schedules/${scheduleKey}`), {
+                        employeeId: empId,
+                        date: date,
+                        shiftType: shiftType,
+                        timestamp: Date.now()
+                    });
+                } else {
+                    await window.dbRemove(window.dbRef(window.db, `schedules/${scheduleKey}`));
+                }
+            } catch (error) {
+                console.error('Error saving schedule data:', error);
+            }
+        }
+
+        async function generateSchedule() {
+            const month = parseInt(document.getElementById('schedule-month').value);
+            const year = parseInt(document.getElementById('schedule-year').value);
+            
+            const daysInMonth = new Date(year, month, 0).getDate();
+            const container = document.getElementById('schedule-table');
+            
+            // Load existing schedule data
+            const scheduleData = await loadScheduleData();
+            
+            let html = '<table class="min-w-full border-collapse border border-gray-300">';
+            
+            // Header
+            html += '<thead><tr class="bg-emerald-800 text-white">';
+            html += '<th class="border border-gray-300 p-2">ชื่อ-นามสกุล</th>';
+            html += '<th class="border border-gray-300 p-2">เบอร์โทรศัพท์</th>';
+            
+            for (let day = 1; day <= daysInMonth; day++) {
+                const date = new Date(year, month - 1, day);
+                const dayName = ['อา', 'จ', 'อ', 'พ', 'พฤ', 'ศ', 'ส'][date.getDay()];
+                const dateStr = `${year}-${month.toString().padStart(2, '0')}-${day.toString().padStart(2, '0')}`;
+                const dayOfWeek = date.getDay();
+                
+                let headerClass = 'border border-gray-300 p-1 text-xs';
+                if (holidays[dateStr] || dayOfWeek === 0 || dayOfWeek === 6) {
+                    headerClass += ' weekend-header';
+                }
+                
+                html += `<th class="${headerClass}">${day}<br>${dayName}</th>`;
+            }
+            html += '</tr></thead>';
+            
+            // Body
+            html += '<tbody>';
+            Object.entries(employees).forEach(([empId, emp]) => {
+                html += '<tr>';
+                html += `<td class="border border-gray-300 p-2 font-medium">${emp.firstname} ${emp.lastname}</td>`;
+                html += `<td class="border border-gray-300 p-2">${emp.phone}</td>`;
+                
+                for (let day = 1; day <= daysInMonth; day++) {
+                    const date = new Date(year, month - 1, day);
+                    const dateStr = `${year}-${month.toString().padStart(2, '0')}-${day.toString().padStart(2, '0')}`;
+                    const dayOfWeek = date.getDay();
+                    const scheduleKey = `${empId}_${dateStr}`;
+                    
+                    let cellClass = 'schedule-cell border border-gray-300';
+                    let cellContent = '';
+                    
+                    if (dayOfWeek === 0 || dayOfWeek === 6) cellClass += ' weekend';
+                    if (holidays[dateStr]) cellClass += ' holiday';
+                    
+                    // Apply saved schedule data
+                    if (scheduleData[scheduleKey]) {
+                        const shiftType = scheduleData[scheduleKey].shiftType;
+                        if (shiftType === 'evening') {
+                            cellClass += ' evening-shift';
+                            cellContent = 'ย';
+                        } else if (shiftType === 'holiday') {
+                            cellClass += ' holiday-shift';
+                            cellContent = 'ห';
+                        } else if (shiftType === 'leave') {
+                            cellClass += ' leave';
+                            cellContent = 'ล';
+                        }
+                    }
+                    
+                    html += `<td class="${cellClass}" onclick="toggleScheduleCell(this, '${empId}', '${dateStr}')">${cellContent}</td>`;
+                }
+                html += '</tr>';
+            });
+            html += '</tbody></table>';
+            
+            container.innerHTML = html;
+            
+            // Add legend
+            const legend = document.createElement('div');
+            legend.className = 'mt-4 p-4 bg-gray-50 rounded-lg border';
+            legend.innerHTML = `
+                <h4 class="font-semibold text-gray-800 mb-2">หมายเหตุ:</h4>
+                <div class="flex flex-wrap gap-4 text-sm">
+                    <div class="flex items-center gap-2">
+                        <span class="w-6 h-6 bg-emerald-500 text-white rounded text-center text-xs font-bold flex items-center justify-center">ย</span>
+                        <span>เวรเย็น</span>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <span class="w-6 h-6 bg-yellow-500 text-white rounded text-center text-xs font-bold flex items-center justify-center">ห</span>
+                        <span>เวรวันหยุด</span>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <span class="w-6 h-6 bg-red-500 text-white rounded text-center text-xs font-bold flex items-center justify-center">ล</span>
+                        <span>ลา</span>
+                    </div>
+                </div>
+            `;
+            container.appendChild(legend);
+            
+            currentScheduleData = { month, year, daysInMonth };
+        }
+
+        async function toggleScheduleCell(cell, empId, date) {
+            const currentClass = cell.className;
+            let newShiftType = null;
+            
+            if (currentClass.includes('evening-shift')) {
+                cell.className = currentClass.replace('evening-shift', 'holiday-shift');
+                cell.textContent = 'ห';
+                newShiftType = 'holiday';
+            } else if (currentClass.includes('holiday-shift')) {
+                cell.className = currentClass.replace('holiday-shift', 'leave');
+                cell.textContent = 'ล';
+                newShiftType = 'leave';
+            } else if (currentClass.includes('leave')) {
+                cell.className = currentClass.replace('leave', '');
+                cell.textContent = '';
+                newShiftType = null;
+            } else {
+                cell.className += ' evening-shift';
+                cell.textContent = 'ย';
+                newShiftType = 'evening';
+            }
+            
+            // Save to database
+            await saveScheduleData(empId, date, newShiftType);
+        }
+
+        // Holiday management
+        function addHoliday() {
+            const date = document.getElementById('holiday-date').value;
+            const desc = document.getElementById('holiday-desc').value;
+            
+            if (date && desc) {
+                holidays[date] = desc;
+                window.dbSet(window.dbRef(window.db, `holidays/${date}`), desc);
+                updateHolidayList();
+                document.getElementById('holiday-date').value = '';
+                document.getElementById('holiday-desc').value = '';
+            }
+        }
+
+        function updateHolidayList() {
+            const container = document.getElementById('holiday-list');
+            container.innerHTML = '';
+            
+            Object.entries(holidays).forEach(([date, desc]) => {
+                const item = document.createElement('div');
+                item.className = 'flex justify-between items-center mb-1';
+                item.innerHTML = `
+                    <span>${new Date(date).toLocaleDateString('th-TH')}: ${desc}</span>
+                    <button onclick="removeHoliday('${date}')" class="text-red-500 text-sm">ลบ</button>
+                `;
+                container.appendChild(item);
+            });
+        }
+
+        function removeHoliday(date) {
+            delete holidays[date];
+            window.dbRemove(window.dbRef(window.db, `holidays/${date}`));
+            updateHolidayList();
+        }
+
+        // Claim table management
+        function generateClaimTable() {
+            const month = parseInt(document.getElementById('claim-month').value);
+            const year = parseInt(document.getElementById('claim-year').value);
+            
+            const daysInMonth = new Date(year, month, 0).getDate();
+            const container = document.getElementById('claim-table');
+            
+            let html = '<table class="min-w-full border-collapse border border-gray-300">';
+            
+            // Header
+            html += '<thead><tr class="bg-emerald-800 text-white">';
+            html += '<th class="border border-gray-300 p-2">ชื่อ-นามสกุล</th>';
+            html += '<th class="border border-gray-300 p-2">เบอร์โทรศัพท์</th>';
+            
+            for (let day = 1; day <= daysInMonth; day++) {
+                const date = new Date(year, month - 1, day);
+                const dayName = ['อา', 'จ', 'อ', 'พ', 'พฤ', 'ศ', 'ส'][date.getDay()];
+                const dateStr = `${year}-${month.toString().padStart(2, '0')}-${day.toString().padStart(2, '0')}`;
+                const dayOfWeek = date.getDay();
+                
+                let headerClass = 'border border-gray-300 p-1 text-xs';
+                if (holidays[dateStr] || dayOfWeek === 0 || dayOfWeek === 6) {
+                    headerClass += ' weekend-header';
+                }
+                
+                html += `<th class="${headerClass}">${day}<br>${dayName}</th>`;
+            }
+            html += '<th class="border border-gray-300 p-2">รวม</th>';
+            html += '</tr></thead>';
+            
+            // Body
+            html += '<tbody>';
+            Object.entries(employees).forEach(([empId, emp]) => {
+                html += '<tr>';
+                html += `<td class="border border-gray-300 p-2 font-medium">${emp.firstname} ${emp.lastname}</td>`;
+                html += `<td class="border border-gray-300 p-2">${emp.phone}</td>`;
+                
+                let workDays = 0;
+                
+                for (let day = 1; day <= daysInMonth; day++) {
+                    const date = new Date(year, month - 1, day);
+                    const dayOfWeek = date.getDay();
+                    const dateStr = `${year}-${month.toString().padStart(2, '0')}-${day.toString().padStart(2, '0')}`;
+                    
+                    // Check work records for this employee and date
+                    const dayRecords = Object.values(workRecords).filter(record => 
+                        record.employeeId === empId && 
+                        (record.date === dateStr || record.claimDate === dateStr)
+                    );
+                    
+                    let cellClass = 'border border-gray-300 p-1 text-center';
+                    let cellContent = '';
+                    
+                    // Add weekend highlighting
+                    if (dayOfWeek === 0 || dayOfWeek === 6) {
+                        cellClass += ' weekend';
+                    }
+                    
+                    if (holidays[dateStr]) {
+                        cellClass += ' holiday';
+                    } else {
+                        const normalWork = dayRecords.filter(r => r.date === dateStr && r.type === 'normal');
+                        const eveningClaims = dayRecords.filter(r => r.claimDate === dateStr && r.type === 'evening');
+                        const holidayClaims = dayRecords.filter(r => r.claimDate === dateStr && r.type === 'holiday');
+                        
+                        if (normalWork.length > 0) {
+                            cellClass += ' work-day';
+                            workDays++;
+                        } else if (eveningClaims.length === 2) {
+                            cellClass += ' work-day';
+                            workDays++;
+                        } else if (eveningClaims.length === 1) {
+                            cellClass += ' warning';
+                        } else if (holidayClaims.length > 0) {
+                            cellClass += ' work-day';
+                            workDays++;
+                        }
+                    }
+                    
+                    html += `<td class="${cellClass}">${cellContent}</td>`;
+                }
+                
+                html += `<td class="border border-gray-300 p-2 text-center font-bold">${workDays}</td>`;
+                html += '</tr>';
+            });
+            html += '</tbody></table>';
+            
+            container.innerHTML = html;
+        }
+
+        // Export functions
+        function exportSummary() {
+            const data = [];
+            const summaryCards = document.querySelectorAll('#summary-results .card');
+            
+            summaryCards.forEach(card => {
+                const taskName = card.querySelector('h3').textContent;
+                const amountText = card.querySelector('p').textContent;
+                // Extract amount and unit from "จำนวน: 123 หน่วย"
+                const match = amountText.match(/จำนวน:\s*(\d+(?:\.\d+)?)\s*(.+)/);
+                const amount = match ? match[1] : '';
+                const unit = match ? match[2] : '';
+                
+                data.push({ 
+                    'ภาระงาน': taskName, 
+                    'จำนวน': amount,
+                    'หน่วย': unit
+                });
+            });
+            
+            exportToExcel(data, 'สรุปผลงาน');
+        }
+
+        function exportHistory() {
+            const data = [];
+            Object.entries(workRecords).forEach(([id, record]) => {
+                const employee = employees[record.employeeId];
+                if (!employee) return;
+                
+                const typeText = {
+                    'normal': 'วันทำงานปกติ',
+                    'evening': 'เวรเย็น',
+                    'holiday': 'เวรวันหยุด'
+                };
+                
+                // Add task rows with complete information for each task
+                if (record.tasks && record.tasks.length > 0) {
+                    record.tasks.forEach(task => {
+                        const taskInfo = tasks[task.taskId];
+                        if (taskInfo) {
+                            const taskRow = {
+                                'ชื่อ-นามสกุล': `${employee.firstname} ${employee.lastname}`,
+                                'วันที่ทำงาน': record.date,
+                                'ประเภท': typeText[record.type],
+                                'วันที่เบิก': record.claimDate || '',
+                                'ภาระงาน': taskInfo.name,
+                                'จำนวน': task.amount,
+                                'หน่วย': taskInfo.unit
+                            };
+                            data.push(taskRow);
+                        }
+                    });
+                }
+                
+                // Add "อื่นๆ" as a separate task row if it exists
+                if (record.other && record.other.trim()) {
+                    const otherRow = {
+                        'ชื่อ-นามสกุล': `${employee.firstname} ${employee.lastname}`,
+                        'วันที่ทำงาน': record.date,
+                        'ประเภท': typeText[record.type],
+                        'วันที่เบิก': record.claimDate || '',
+                        'ภาระงาน': record.other,
+                        'จำนวน': '',
+                        'หน่วย': ''
+                    };
+                    data.push(otherRow);
+                }
+            });
+            
+            exportToExcel(data, 'ประวัติการบันทึก');
+        }
+
+        function exportSchedule() {
+            if (!currentScheduleData.month) {
+                alert('กรุณาสร้างตารางก่อน');
+                return;
+            }
+            
+            const data = [];
+            const table = document.querySelector('#schedule-table table');
+            const rows = table.querySelectorAll('tbody tr');
+            
+            rows.forEach(row => {
+                const cells = row.querySelectorAll('td');
+                const rowData = {
+                    'ชื่อ-นามสกุล': cells[0].textContent,
+                    'เบอร์โทรศัพท์': cells[1].textContent
+                };
+                
+                for (let i = 2; i < cells.length; i++) {
+                    rowData[`วันที่ ${i-1}`] = cells[i].textContent;
+                }
+                
+                data.push(rowData);
+            });
+            
+            exportToExcel(data, 'ตารางเวร');
+        }
+
+        function exportClaim() {
+            const month = parseInt(document.getElementById('claim-month').value);
+            const year = parseInt(document.getElementById('claim-year').value);
+            const daysInMonth = new Date(year, month, 0).getDate();
+            
+            const data = [];
+            
+            Object.entries(employees).forEach(([empId, emp]) => {
+                const rowData = {
+                    'ชื่อ-นามสกุล': `${emp.firstname} ${emp.lastname}`,
+                    'เบอร์โทรศัพท์': emp.phone
+                };
+                
+                let workDays = 0;
+                
+                for (let day = 1; day <= daysInMonth; day++) {
+                    const dateStr = `${year}-${month.toString().padStart(2, '0')}-${day.toString().padStart(2, '0')}`;
+                    const columnName = `วันที่ ${day}`;
+                    
+                    if (holidays[dateStr]) {
+                        rowData[columnName] = 'วันหยุด';
+                        continue;
+                    }
+                    
+                    // Check work records for this employee and date
+                    const dayRecords = Object.values(workRecords).filter(record => 
+                        record.employeeId === empId && 
+                        (record.date === dateStr || record.claimDate === dateStr)
+                    );
+                    
+                    const normalWork = dayRecords.filter(r => r.date === dateStr && r.type === 'normal');
+                    const eveningClaims = dayRecords.filter(r => r.claimDate === dateStr && r.type === 'evening');
+                    const holidayClaims = dayRecords.filter(r => r.claimDate === dateStr && r.type === 'holiday');
+                    
+                    let cellValue = '';
+                    
+                    if (normalWork.length > 0) {
+                        cellValue = `ทำงานปกติ (${dateStr})`;
+                        workDays++;
+                    } else if (eveningClaims.length >= 2) {
+                        const workDates = eveningClaims.map(r => r.date).join(', ');
+                        cellValue = `เบิกเวรเย็น (ทำงาน: ${workDates})`;
+                        workDays++;
+                    } else if (eveningClaims.length === 1) {
+                        const workDate = eveningClaims[0].date;
+                        cellValue = `เบิกเวรเย็น 1 วัน (ทำงาน: ${workDate}) - ไม่ครบ`;
+                    } else if (holidayClaims.length > 0) {
+                        const workDates = holidayClaims.map(r => r.date).join(', ');
+                        cellValue = `เบิกเวรวันหยุด (ทำงาน: ${workDates})`;
+                        workDays++;
+                    }
+                    
+                    rowData[columnName] = cellValue;
+                }
+                
+                rowData['รวมวันทำงาน'] = workDays;
+                data.push(rowData);
+            });
+            
+            exportToExcel(data, 'ตารางเบิก');
+        }
+
+        function exportEmployees() {
+            const data = Object.values(employees).map(emp => ({
+                'ชื่อ': emp.firstname,
+                'นามสกุล': emp.lastname,
+                'ตำแหน่ง': emp.position,
+                'เบอร์โทรศัพท์': emp.phone
+            }));
+            
+            exportToExcel(data, 'รายละเอียดพนักงาน');
+        }
+
+        function exportTasks() {
+            const data = Object.values(tasks).map(task => ({
+                'ภาระงาน': task.name,
+                'หน่วย': task.unit
+            }));
+            
+            exportToExcel(data, 'ภาระงาน');
+        }
+
+        async function deleteRecord(recordId) {
+            if (confirm('ต้องการลบรายการบันทึกนี้หรือไม่?')) {
+                try {
+                    await window.dbRemove(window.dbRef(window.db, `workRecords/${recordId}`));
+                    delete workRecords[recordId];
+                    loadHistory();
+                    alert('ลบรายการบันทึกสำเร็จ');
+                    // Auto-refresh summary if it's currently visible
+                    if (!document.getElementById('summary-tab').classList.contains('hidden')) {
+                        setTimeout(() => loadSummary(), 200);
+                    }
+                    // Auto-refresh history if it's currently visible
+                    if (!document.getElementById('history-tab').classList.contains('hidden')) {
+                        setTimeout(() => loadHistory(), 200);
+                    }
+                } catch (error) {
+                    console.error('Error deleting record:', error);
+                    alert('เกิดข้อผิดพลาดในการลบรายการบันทึก');
+                }
+            }
+        }
+
+        function exportToExcel(data, filename) {
+            const ws = XLSX.utils.json_to_sheet(data);
+            const wb = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(wb, ws, 'Sheet1');
+            XLSX.writeFile(wb, `${filename}.xlsx`);
+        }
+    </script>
+<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'9583f75341992db4',t:'MTc1MTM1MjU5NC4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+</html>
