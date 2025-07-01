@@ -16,7 +16,7 @@
         const firebaseConfig = {
             apiKey: "AIzaSyABVSPHnKroNKRKdRJVGUUnbSoo4G5caSM",
             authDomain: "epid-employeev1.firebaseapp.com",
-            databaseURL: "https://epid-employeev1-default-rtdb.asia-southeast1.firebasedatabase.app/",
+            databaseURL: "https://epid-employeev1-default-rtdb.asia-southeast1.firebasedatabase.app",
             projectId: "epid-employeev1",
             storageBucket: "epid-employeev1.firebasestorage.app",
             messagingSenderId: "154704410306",
@@ -24,15 +24,22 @@
             measurementId: "G-SE72761NVF"
         };
 
-        const app = initializeApp(firebaseConfig);
-        const database = getDatabase(app);
-        window.db = database;
-        window.dbRef = ref;
-        window.dbPush = push;
-        window.dbSet = set;
-        window.dbGet = get;
-        window.dbRemove = remove;
-        window.dbUpdate = update;
+        try {
+            const app = initializeApp(firebaseConfig);
+            const database = getDatabase(app);
+            window.db = database;
+            window.dbRef = ref;
+            window.dbPush = push;
+            window.dbSet = set;
+            window.dbGet = get;
+            window.dbRemove = remove;
+            window.dbUpdate = update;
+            window.firebaseReady = true;
+            console.log('Firebase initialized successfully');
+        } catch (error) {
+            console.error('Firebase initialization error:', error);
+            window.firebaseReady = false;
+        }
     </script>
     <style>
         body { font-family: 'Prompt', sans-serif; }
@@ -56,6 +63,30 @@
         .holiday-header { background-color: #e5e7eb !important; color: #dc2626 !important; }
         .work-day { background-color: #10b981 !important; color: white; }
         .warning { background-color: #fbbf24 !important; color: white; }
+        .claim-cell { cursor: pointer; }
+        .claim-cell:hover { background-color: rgba(0, 0, 0, 0.05); }
+        .popup-overlay { 
+            position: fixed; 
+            top: 0; 
+            left: 0; 
+            width: 100%; 
+            height: 100%; 
+            background-color: rgba(0, 0, 0, 0.5); 
+            z-index: 1000; 
+            display: flex; 
+            align-items: center; 
+            justify-content: center; 
+        }
+        .popup-content { 
+            background: white; 
+            border-radius: 12px; 
+            padding: 24px; 
+            max-width: 500px; 
+            width: 90%; 
+            max-height: 80vh; 
+            overflow-y: auto; 
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04); 
+        }
     </style>
 </head>
 <body class="bg-gray-100 min-h-screen">
@@ -247,7 +278,6 @@
                         <input type="text" id="holiday-desc" class="input-field" placeholder="รายละเอียดวันหยุด">
                         <button onclick="addHoliday()" class="btn-primary px-4 py-2 rounded-lg">เพิ่มวันหยุด</button>
                     </div>
-                    <div id="holiday-list" class="text-sm text-gray-600"></div>
                 </div>
                 <div class="flex gap-2 mb-4">
                     <button onclick="exportSchedule()" class="btn-secondary px-4 py-2 rounded-lg">ส่งออก Excel</button>
@@ -340,6 +370,19 @@
         </div>
     </div>
 
+    <!-- Claim Details Popup -->
+    <div id="claim-popup" class="popup-overlay hidden">
+        <div class="popup-content">
+            <div class="flex justify-between items-center mb-4">
+                <h3 class="text-xl font-bold text-emerald-800">รายละเอียดการเบิก</h3>
+                <button onclick="closeClaimPopup()" class="bg-gray-200 hover:bg-red-500 hover:text-white text-gray-700 w-8 h-8 rounded-full flex items-center justify-center text-xl font-bold transition-colors duration-200">&times;</button>
+            </div>
+            <div id="claim-popup-content">
+                <!-- Content will be populated by JavaScript -->
+            </div>
+        </div>
+    </div>
+
     <script>
         // Global variables
         let employees = {};
@@ -350,93 +393,199 @@
 
         // Initialize
         document.addEventListener('DOMContentLoaded', function() {
-            loadEmployees();
-            loadTasks();
-            loadWorkRecords();
-            loadHolidays();
-            
-            // Set current date
-            document.getElementById('record-date').value = new Date().toISOString().split('T')[0];
-            
-            // Set current month/year
-            const now = new Date();
-            document.getElementById('schedule-month').value = now.getMonth() + 1;
-            document.getElementById('schedule-year').value = now.getFullYear();
-            document.getElementById('claim-month').value = now.getMonth() + 1;
-            document.getElementById('claim-year').value = now.getFullYear();
-            
-            // Set default date range for summary (current month)
-            const firstDay = new Date(now.getFullYear(), now.getMonth(), 1);
-            const lastDay = new Date(now.getFullYear(), now.getMonth() + 1, 0);
-            document.getElementById('summary-start-date').value = firstDay.toISOString().split('T')[0];
-            document.getElementById('summary-end-date').value = lastDay.toISOString().split('T')[0];
-            
-            // Auto-load summary after data is loaded
-            setTimeout(() => {
-                loadSummary();
-            }, 500);
+            try {
+                // Set current date first (no async needed)
+                document.getElementById('record-date').value = new Date().toISOString().split('T')[0];
+                
+                // Set current month/year
+                const now = new Date();
+                document.getElementById('schedule-month').value = now.getMonth() + 1;
+                document.getElementById('schedule-year').value = now.getFullYear();
+                document.getElementById('claim-month').value = now.getMonth() + 1;
+                document.getElementById('claim-year').value = now.getFullYear();
+                
+                // Set default date range for summary (current month)
+                const firstDay = new Date(now.getFullYear(), now.getMonth(), 1);
+                const lastDay = new Date(now.getFullYear(), now.getMonth() + 1, 0);
+                document.getElementById('summary-start-date').value = firstDay.toISOString().split('T')[0];
+                document.getElementById('summary-end-date').value = lastDay.toISOString().split('T')[0];
+                
+                // Wait for Firebase to be ready, then load data
+                function waitForFirebase() {
+                    if (window.firebaseReady === true) {
+                        console.log('Firebase ready, loading data...');
+                        loadEmployees().then(() => {
+                            return loadTasks();
+                        }).then(() => {
+                            return loadWorkRecords();
+                        }).then(() => {
+                            return loadHolidays();
+                        }).then(() => {
+                            // Only load summary if we're on the summary tab
+                            if (!document.getElementById('summary-tab').classList.contains('hidden')) {
+                                loadSummary();
+                            }
+                            console.log('All data loaded successfully');
+                        }).catch(error => {
+                            console.error('Background loading error:', error);
+                        });
+                    } else if (window.firebaseReady === false) {
+                        console.log('Firebase failed to initialize, using offline mode');
+                        // Initialize empty data for offline mode
+                        employees = {};
+                        tasks = {};
+                        workRecords = {};
+                        holidays = {};
+                        updateEmployeeSelects();
+                        updateTaskSelects();
+                    } else {
+                        // Still waiting for Firebase
+                        setTimeout(waitForFirebase, 100);
+                    }
+                }
+                
+                // Start waiting for Firebase
+                setTimeout(waitForFirebase, 100);
+                
+            } catch (error) {
+                console.error('Initialization error:', error);
+            }
         });
 
         // Tab management
         function showTab(tabName) {
-            // Hide all tabs
-            document.querySelectorAll('.tab-content').forEach(tab => tab.classList.add('hidden'));
-            document.querySelectorAll('[id^="tab-"]').forEach(btn => {
-                btn.classList.remove('tab-active');
-                btn.classList.add('tab-inactive');
-            });
-            
-            // Show selected tab
-            document.getElementById(tabName + '-tab').classList.remove('hidden');
-            document.getElementById('tab-' + tabName).classList.remove('tab-inactive');
-            document.getElementById('tab-' + tabName).classList.add('tab-active');
-            
-            // Load data for specific tabs
-            if (tabName === 'employees') loadEmployeesList();
-            if (tabName === 'tasks') loadTasksList();
-            if (tabName === 'summary') loadSummaryOptions();
-            if (tabName === 'history') loadHistory();
-            if (tabName === 'schedule') generateSchedule();
-            if (tabName === 'claim') generateClaimTable();
+            try {
+                console.log('Switching to tab:', tabName);
+                
+                // Hide all tabs
+                const allTabs = document.querySelectorAll('.tab-content');
+                allTabs.forEach(tab => {
+                    if (tab) tab.classList.add('hidden');
+                });
+                
+                // Reset all tab buttons
+                const allButtons = document.querySelectorAll('[id^="tab-"]');
+                allButtons.forEach(btn => {
+                    if (btn) {
+                        btn.classList.remove('tab-active');
+                        btn.classList.add('tab-inactive');
+                    }
+                });
+                
+                // Show selected tab
+                const selectedTab = document.getElementById(tabName + '-tab');
+                const selectedButton = document.getElementById('tab-' + tabName);
+                
+                if (selectedTab) {
+                    selectedTab.classList.remove('hidden');
+                } else {
+                    console.error('Tab not found:', tabName + '-tab');
+                }
+                
+                if (selectedButton) {
+                    selectedButton.classList.remove('tab-inactive');
+                    selectedButton.classList.add('tab-active');
+                } else {
+                    console.error('Button not found:', 'tab-' + tabName);
+                }
+                
+                // Load data for specific tabs with error handling
+                setTimeout(() => {
+                    try {
+                        if (tabName === 'employees') {
+                            loadEmployeesList();
+                        } else if (tabName === 'tasks') {
+                            loadTasksList();
+                        } else if (tabName === 'summary') {
+                            loadSummaryOptions();
+                        } else if (tabName === 'history') {
+                            loadHistory();
+                        } else if (tabName === 'schedule') {
+                            generateSchedule();
+                        } else if (tabName === 'claim') {
+                            generateClaimTable();
+                        }
+                    } catch (error) {
+                        console.error('Error loading tab data:', error);
+                    }
+                }, 100);
+                
+            } catch (error) {
+                console.error('Error in showTab:', error);
+            }
         }
 
-        // Firebase operations
+        // Firebase operations with better error handling
         async function loadEmployees() {
             try {
+                if (!window.db || !window.dbGet || !window.dbRef || !window.firebaseReady) {
+                    console.log('Firebase not ready yet, using empty data');
+                    employees = {};
+                    updateEmployeeSelects();
+                    return;
+                }
                 const snapshot = await window.dbGet(window.dbRef(window.db, 'employees'));
                 employees = snapshot.val() || {};
                 updateEmployeeSelects();
+                console.log('Employees loaded:', Object.keys(employees).length);
             } catch (error) {
                 console.error('Error loading employees:', error);
+                employees = {};
+                updateEmployeeSelects();
             }
         }
 
         async function loadTasks() {
             try {
+                if (!window.db || !window.dbGet || !window.dbRef || !window.firebaseReady) {
+                    console.log('Firebase not ready yet, using empty data');
+                    tasks = {};
+                    updateTaskSelects();
+                    return;
+                }
                 const snapshot = await window.dbGet(window.dbRef(window.db, 'tasks'));
                 tasks = snapshot.val() || {};
                 updateTaskSelects();
+                console.log('Tasks loaded:', Object.keys(tasks).length);
             } catch (error) {
                 console.error('Error loading tasks:', error);
+                tasks = {};
+                updateTaskSelects();
             }
         }
 
         async function loadWorkRecords() {
             try {
+                if (!window.db || !window.dbGet || !window.dbRef || !window.firebaseReady) {
+                    console.log('Firebase not ready yet, using empty data');
+                    workRecords = {};
+                    return;
+                }
                 const snapshot = await window.dbGet(window.dbRef(window.db, 'workRecords'));
                 workRecords = snapshot.val() || {};
+                console.log('Work records loaded:', Object.keys(workRecords).length);
             } catch (error) {
                 console.error('Error loading work records:', error);
+                workRecords = {};
             }
         }
 
         async function loadHolidays() {
             try {
+                if (!window.db || !window.dbGet || !window.dbRef || !window.firebaseReady) {
+                    console.log('Firebase not ready yet, using empty data');
+                    holidays = {};
+                    updateHolidayList();
+                    return;
+                }
                 const snapshot = await window.dbGet(window.dbRef(window.db, 'holidays'));
                 holidays = snapshot.val() || {};
                 updateHolidayList();
+                console.log('Holidays loaded:', Object.keys(holidays).length);
             } catch (error) {
                 console.error('Error loading holidays:', error);
+                holidays = {};
+                updateHolidayList();
             }
         }
 
@@ -565,23 +714,39 @@
         });
 
         function loadEmployeesList() {
-            const container = document.getElementById('employees-list');
-            container.innerHTML = '';
-            
-            Object.entries(employees).forEach(([id, emp]) => {
-                const card = document.createElement('div');
-                card.className = 'card p-4';
-                card.innerHTML = `
-                    <h3 class="font-semibold text-emerald-800">${emp.firstname} ${emp.lastname}</h3>
-                    <p class="text-gray-600">${emp.position}</p>
-                    <p class="text-gray-600">${emp.phone}</p>
-                    <div class="mt-3 flex gap-2">
-                        <button onclick="editEmployee('${id}')" class="btn-primary px-3 py-1 rounded text-sm">แก้ไข</button>
-                        <button onclick="deleteEmployee('${id}')" class="bg-red-500 hover:bg-red-600 text-white px-3 py-1 rounded text-sm">ลบ</button>
-                    </div>
-                `;
-                container.appendChild(card);
-            });
+            try {
+                const container = document.getElementById('employees-list');
+                if (!container) {
+                    console.error('employees-list container not found');
+                    return;
+                }
+                
+                container.innerHTML = '';
+                
+                if (!employees || Object.keys(employees).length === 0) {
+                    container.innerHTML = '<p class="text-gray-500 text-center">ยังไม่มีข้อมูลพนักงาน</p>';
+                    return;
+                }
+                
+                Object.entries(employees).forEach(([id, emp]) => {
+                    if (!emp) return;
+                    
+                    const card = document.createElement('div');
+                    card.className = 'card p-4';
+                    card.innerHTML = `
+                        <h3 class="font-semibold text-emerald-800">${emp.firstname || ''} ${emp.lastname || ''}</h3>
+                        <p class="text-gray-600">${emp.position || ''}</p>
+                        <p class="text-gray-600">${emp.phone || ''}</p>
+                        <div class="mt-3 flex gap-2">
+                            <button onclick="editEmployee('${id}')" class="btn-primary px-3 py-1 rounded text-sm">แก้ไข</button>
+                            <button onclick="deleteEmployee('${id}')" class="bg-red-500 hover:bg-red-600 text-white px-3 py-1 rounded text-sm">ลบ</button>
+                        </div>
+                    `;
+                    container.appendChild(card);
+                });
+            } catch (error) {
+                console.error('Error in loadEmployeesList:', error);
+            }
         }
 
         function editEmployee(id) {
@@ -795,22 +960,38 @@
         });
 
         function loadTasksList() {
-            const container = document.getElementById('tasks-list');
-            container.innerHTML = '';
-            
-            Object.entries(tasks).forEach(([id, task]) => {
-                const card = document.createElement('div');
-                card.className = 'card p-4';
-                card.innerHTML = `
-                    <h3 class="font-semibold text-emerald-800">${task.name}</h3>
-                    <p class="text-gray-600">หน่วย: ${task.unit}</p>
-                    <div class="mt-3 flex gap-2">
-                        <button onclick="editTask('${id}')" class="btn-primary px-3 py-1 rounded text-sm">แก้ไข</button>
-                        <button onclick="deleteTask('${id}')" class="bg-red-500 hover:bg-red-600 text-white px-3 py-1 rounded text-sm">ลบ</button>
-                    </div>
-                `;
-                container.appendChild(card);
-            });
+            try {
+                const container = document.getElementById('tasks-list');
+                if (!container) {
+                    console.error('tasks-list container not found');
+                    return;
+                }
+                
+                container.innerHTML = '';
+                
+                if (!tasks || Object.keys(tasks).length === 0) {
+                    container.innerHTML = '<p class="text-gray-500 text-center">ยังไม่มีข้อมูลภาระงาน</p>';
+                    return;
+                }
+                
+                Object.entries(tasks).forEach(([id, task]) => {
+                    if (!task) return;
+                    
+                    const card = document.createElement('div');
+                    card.className = 'card p-4';
+                    card.innerHTML = `
+                        <h3 class="font-semibold text-emerald-800">${task.name || ''}</h3>
+                        <p class="text-gray-600">หน่วย: ${task.unit || ''}</p>
+                        <div class="mt-3 flex gap-2">
+                            <button onclick="editTask('${id}')" class="btn-primary px-3 py-1 rounded text-sm">แก้ไข</button>
+                            <button onclick="deleteTask('${id}')" class="bg-red-500 hover:bg-red-600 text-white px-3 py-1 rounded text-sm">ลบ</button>
+                        </div>
+                    `;
+                    container.appendChild(card);
+                });
+            } catch (error) {
+                console.error('Error in loadTasksList:', error);
+            }
         }
 
         function editTask(id) {
@@ -958,48 +1139,73 @@
 
         // History management
         function loadHistory() {
-            const container = document.getElementById('history-results');
-            container.innerHTML = '';
-            
-            const records = Object.entries(workRecords).sort((a, b) => b[1].timestamp - a[1].timestamp);
-            
-            records.forEach(([id, record]) => {
-                const employee = employees[record.employeeId];
-                if (!employee) return;
-                
-                const card = document.createElement('div');
-                card.className = 'card p-4';
-                
-                const typeText = {
-                    'normal': 'วันทำงานปกติ',
-                    'evening': 'เวรเย็น',
-                    'holiday': 'เวรวันหยุด'
-                };
-                
-                let tasksHtml = '';
-                if (record.tasks && record.tasks.length > 0) {
-                    tasksHtml = record.tasks.map(task => {
-                        const taskInfo = tasks[task.taskId];
-                        return taskInfo ? `${taskInfo.name}: ${task.amount} ${taskInfo.unit}` : '';
-                    }).filter(t => t).join(', ');
+            try {
+                const container = document.getElementById('history-results');
+                if (!container) {
+                    console.error('history-results container not found');
+                    return;
                 }
                 
-                card.innerHTML = `
-                    <div class="flex justify-between items-start mb-2">
-                        <h3 class="font-semibold text-emerald-800">${employee.firstname} ${employee.lastname}</h3>
-                        <div class="flex items-center gap-2">
-                            <span class="text-sm text-gray-500">${new Date(record.timestamp).toLocaleDateString('th-TH')}</span>
-                            <button onclick="deleteRecord('${id}')" class="bg-red-500 hover:bg-red-600 text-white px-2 py-1 rounded text-xs">ลบ</button>
+                container.innerHTML = '';
+                
+                if (!workRecords || Object.keys(workRecords).length === 0) {
+                    container.innerHTML = '<p class="text-gray-500 text-center">ยังไม่มีประวัติการบันทึก</p>';
+                    return;
+                }
+                
+                const records = Object.entries(workRecords).sort((a, b) => (b[1].timestamp || 0) - (a[1].timestamp || 0));
+                
+                records.forEach(([id, record]) => {
+                    if (!record) return;
+                    
+                    const employee = employees[record.employeeId];
+                    if (!employee) return;
+                    
+                    const card = document.createElement('div');
+                    card.className = 'card p-4';
+                    
+                    const typeText = {
+                        'normal': 'วันทำงานปกติ',
+                        'evening': 'เวรเย็น',
+                        'holiday': 'เวรวันหยุด'
+                    };
+                    
+                    let tasksHtml = '';
+                    if (record.tasks && Array.isArray(record.tasks) && record.tasks.length > 0) {
+                        tasksHtml = record.tasks.map(task => {
+                            if (!task || !task.taskId) return '';
+                            const taskInfo = tasks[task.taskId];
+                            return taskInfo ? `${taskInfo.name}: ${task.amount} ${taskInfo.unit}` : '';
+                        }).filter(t => t).join(', ');
+                    }
+                    
+                    const recordDate = record.date ? new Date(record.date).toLocaleDateString('th-TH') : 'ไม่ระบุ';
+                    const timestampDate = record.timestamp ? new Date(record.timestamp).toLocaleDateString('th-TH') : 'ไม่ระบุ';
+                    const claimDate = record.claimDate ? new Date(record.claimDate).toLocaleDateString('th-TH') : '';
+                    
+                    card.innerHTML = `
+                        <div class="flex justify-between items-start mb-2">
+                            <h3 class="font-semibold text-emerald-800">${employee.firstname || ''} ${employee.lastname || ''}</h3>
+                            <div class="flex items-center gap-2">
+                                <span class="text-sm text-gray-500">${timestampDate}</span>
+                                <button onclick="deleteRecord('${id}')" class="bg-red-500 hover:bg-red-600 text-white px-2 py-1 rounded text-xs">ลบ</button>
+                            </div>
                         </div>
-                    </div>
-                    <p><strong>วันที่ทำงาน:</strong> ${new Date(record.date).toLocaleDateString('th-TH')}</p>
-                    <p><strong>ประเภท:</strong> ${typeText[record.type]}</p>
-                    ${record.claimDate ? `<p><strong>วันที่เบิก:</strong> ${new Date(record.claimDate).toLocaleDateString('th-TH')}</p>` : ''}
-                    ${tasksHtml ? `<p><strong>ภาระงาน:</strong> ${tasksHtml}</p>` : ''}
-                    ${record.other ? `<p><strong>อื่นๆ:</strong> ${record.other}</p>` : ''}
-                `;
-                container.appendChild(card);
-            });
+                        <p><strong>วันที่ทำงาน:</strong> ${recordDate}</p>
+                        <p><strong>ประเภท:</strong> ${typeText[record.type] || record.type || 'ไม่ระบุ'}</p>
+                        ${claimDate ? `<p><strong>วันที่เบิก:</strong> ${claimDate}</p>` : ''}
+                        ${tasksHtml ? `<p><strong>ภาระงาน:</strong> ${tasksHtml}</p>` : ''}
+                        ${record.other ? `<p><strong>อื่นๆ:</strong> ${record.other}</p>` : ''}
+                    `;
+                    container.appendChild(card);
+                });
+            } catch (error) {
+                console.error('Error in loadHistory:', error);
+                const container = document.getElementById('history-results');
+                if (container) {
+                    container.innerHTML = '<p class="text-red-500 text-center">เกิดข้อผิดพลาดในการโหลดประวัติ</p>';
+                }
+            }
         }
 
         // Summary management
@@ -1022,7 +1228,8 @@
             const otherSection = document.getElementById('other-activities-section');
             const otherContainer = document.getElementById('other-activities-results');
             
-            summaryContainer.innerHTML = '';
+            // Show loading indicator
+            summaryContainer.innerHTML = '<div class="text-center py-8"><div class="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-emerald-600"></div><p class="mt-2 text-gray-600">กำลังโหลดข้อมูล...</p></div>';
             otherContainer.innerHTML = '';
             otherSection.classList.add('hidden');
             
@@ -1037,47 +1244,65 @@
                 return;
             }
             
-            // Process work records for summary
-            const summaryData = {};
-            const otherActivities = [];
-            
-            Object.entries(workRecords).forEach(([id, record]) => {
-                // Check if person should be included based on selection
-                if (selectedPersons !== 'all' && Array.isArray(selectedPersons) && !selectedPersons.includes(record.employeeId)) return;
+            // Process work records for summary with timeout to prevent blocking
+            setTimeout(() => {
+                const summaryData = {};
+                const otherActivities = [];
                 
-                // Check if record date is within the selected range
-                if (record.date < startDate || record.date > endDate) return;
-                
-                const employee = employees[record.employeeId];
-                if (!employee) return;
-                
-                // Process regular tasks
-                if (record.tasks) {
-                    record.tasks.forEach(task => {
-                        // Check if task should be included based on selection
-                        if (selectedTasks !== 'all' && Array.isArray(selectedTasks) && !selectedTasks.includes(task.taskId)) return;
+                try {
+                    Object.entries(workRecords || {}).forEach(([id, record]) => {
+                        // Check if person should be included based on selection
+                        if (selectedPersons !== 'all' && Array.isArray(selectedPersons) && !selectedPersons.includes(record.employeeId)) return;
                         
-                        const taskInfo = tasks[task.taskId];
-                        if (!taskInfo) return;
+                        // Check if record date is within the selected range
+                        if (record.date < startDate || record.date > endDate) return;
                         
-                        const taskKey = taskInfo.name;
-                        if (!summaryData[taskKey]) {
-                            summaryData[taskKey] = { amount: 0, unit: taskInfo.unit };
+                        const employee = employees[record.employeeId];
+                        if (!employee) return;
+                        
+                        // Process regular tasks
+                        if (record.tasks && Array.isArray(record.tasks)) {
+                            record.tasks.forEach(task => {
+                                // Check if task should be included based on selection
+                                if (selectedTasks !== 'all' && Array.isArray(selectedTasks) && !selectedTasks.includes(task.taskId)) return;
+                                
+                                const taskInfo = tasks[task.taskId];
+                                if (!taskInfo) return;
+                                
+                                const taskKey = taskInfo.name;
+                                if (!summaryData[taskKey]) {
+                                    summaryData[taskKey] = { amount: 0, unit: taskInfo.unit };
+                                }
+                                summaryData[taskKey].amount += parseFloat(task.amount) || 0;
+                            });
                         }
-                        summaryData[taskKey].amount += task.amount;
+                        
+                        // Process "อื่น ๆ" activities
+                        if (record.other && record.other.trim() && 
+                            (selectedTasks === 'all' || (Array.isArray(selectedTasks) && selectedTasks.includes('other')))) {
+                            otherActivities.push({
+                                employee: `${employee.firstname} ${employee.lastname}`,
+                                date: record.date,
+                                activity: record.other.trim()
+                            });
+                        }
                     });
+                    
+                    displaySummaryResults(summaryData, otherActivities);
+                } catch (error) {
+                    console.error('Error processing summary data:', error);
+                    summaryContainer.innerHTML = '<p class="text-red-500 text-center">เกิดข้อผิดพลาดในการประมวลผลข้อมูล</p>';
                 }
-                
-                // Process "อื่น ๆ" activities
-                if (record.other && record.other.trim() && 
-                    (selectedTasks === 'all' || (Array.isArray(selectedTasks) && selectedTasks.includes('other')))) {
-                    otherActivities.push({
-                        employee: `${employee.firstname} ${employee.lastname}`,
-                        date: record.date,
-                        activity: record.other.trim()
-                    });
-                }
-            });
+            }, 100);
+        }
+        
+        function displaySummaryResults(summaryData, otherActivities) {
+            const summaryContainer = document.getElementById('summary-results');
+            const otherSection = document.getElementById('other-activities-section');
+            const otherContainer = document.getElementById('other-activities-results');
+            
+            summaryContainer.innerHTML = '';
+            otherContainer.innerHTML = '';
             
             // Display regular task summary
             let hasRegularTasks = false;
@@ -1086,11 +1311,11 @@
                 card.className = 'card p-4';
                 
                 card.innerHTML = `
-                    <h3 class="font-semibold text-emerald-800 mb-2">${taskName}</h3>
-                    <div class="flex items-baseline gap-2">
+                    <h3 class="font-semibold text-emerald-800 mb-3">${taskName}</h3>
+                    <div class="flex items-baseline gap-3">
                         <span class="text-sm text-gray-600">จำนวน:</span>
-                        <span class="text-4xl font-bold text-emerald-700">${taskData.amount}</span>
-                        <span class="text-lg text-gray-600">${taskData.unit}</span>
+                        <span class="text-6xl font-bold text-emerald-700">${taskData.amount}</span>
+                        <span class="text-xl text-gray-600">${taskData.unit}</span>
                     </div>
                 `;
                 summaryContainer.appendChild(card);
@@ -1153,102 +1378,163 @@
         }
 
         async function generateSchedule() {
-            const month = parseInt(document.getElementById('schedule-month').value);
-            const year = parseInt(document.getElementById('schedule-year').value);
-            
-            const daysInMonth = new Date(year, month, 0).getDate();
-            const container = document.getElementById('schedule-table');
-            
-            // Load existing schedule data
-            const scheduleData = await loadScheduleData();
-            
-            let html = '<table class="min-w-full border-collapse border border-gray-300">';
-            
-            // Header
-            html += '<thead><tr class="bg-emerald-800 text-white">';
-            html += '<th class="border border-gray-300 p-2">ชื่อ-นามสกุล</th>';
-            html += '<th class="border border-gray-300 p-2">เบอร์โทรศัพท์</th>';
-            
-            for (let day = 1; day <= daysInMonth; day++) {
-                const date = new Date(year, month - 1, day);
-                const dayName = ['อา', 'จ', 'อ', 'พ', 'พฤ', 'ศ', 'ส'][date.getDay()];
-                const dateStr = `${year}-${month.toString().padStart(2, '0')}-${day.toString().padStart(2, '0')}`;
-                const dayOfWeek = date.getDay();
+            try {
+                const monthElement = document.getElementById('schedule-month');
+                const yearElement = document.getElementById('schedule-year');
+                const container = document.getElementById('schedule-table');
                 
-                let headerClass = 'border border-gray-300 p-1 text-xs';
-                if (holidays[dateStr] || dayOfWeek === 0 || dayOfWeek === 6) {
-                    headerClass += ' weekend-header';
+                if (!monthElement || !yearElement || !container) {
+                    console.error('Schedule elements not found');
+                    return;
                 }
                 
-                html += `<th class="${headerClass}">${day}<br>${dayName}</th>`;
-            }
-            html += '</tr></thead>';
-            
-            // Body
-            html += '<tbody>';
-            Object.entries(employees).forEach(([empId, emp]) => {
-                html += '<tr>';
-                html += `<td class="border border-gray-300 p-2 font-medium">${emp.firstname} ${emp.lastname}</td>`;
-                html += `<td class="border border-gray-300 p-2">${emp.phone}</td>`;
+                const month = parseInt(monthElement.value);
+                const year = parseInt(yearElement.value);
+                
+                if (!month || !year) {
+                    container.innerHTML = '<p class="text-red-500 text-center">กรุณาเลือกเดือนและปี</p>';
+                    return;
+                }
+                
+                const daysInMonth = new Date(year, month, 0).getDate();
+                
+                // Show loading
+                container.innerHTML = '<div class="text-center py-8"><div class="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-emerald-600"></div><p class="mt-2 text-gray-600">กำลังสร้างตาราง...</p></div>';
+                
+                // Load existing schedule data
+                const scheduleData = await loadScheduleData();
+                
+                // Store schedule data for export
+                currentScheduleData.scheduleData = scheduleData;
+                
+                if (!employees || Object.keys(employees).length === 0) {
+                    container.innerHTML = '<p class="text-gray-500 text-center">ยังไม่มีข้อมูลพนักงาน กรุณาเพิ่มพนักงานก่อน</p>';
+                    return;
+                }
+                
+                let html = '<table class="min-w-full border-collapse border border-gray-300">';
+                
+                // Header
+                html += '<thead><tr class="bg-emerald-800 text-white">';
+                html += '<th class="border border-gray-300 p-2">ชื่อ-นามสกุล</th>';
                 
                 for (let day = 1; day <= daysInMonth; day++) {
                     const date = new Date(year, month - 1, day);
+                    const dayName = ['อา', 'จ', 'อ', 'พ', 'พฤ', 'ศ', 'ส'][date.getDay()];
                     const dateStr = `${year}-${month.toString().padStart(2, '0')}-${day.toString().padStart(2, '0')}`;
                     const dayOfWeek = date.getDay();
-                    const scheduleKey = `${empId}_${dateStr}`;
                     
-                    let cellClass = 'schedule-cell border border-gray-300';
-                    let cellContent = '';
-                    
-                    if (dayOfWeek === 0 || dayOfWeek === 6) cellClass += ' weekend';
-                    if (holidays[dateStr]) cellClass += ' holiday';
-                    
-                    // Apply saved schedule data
-                    if (scheduleData[scheduleKey]) {
-                        const shiftType = scheduleData[scheduleKey].shiftType;
-                        if (shiftType === 'evening') {
-                            cellClass += ' evening-shift';
-                            cellContent = 'ย';
-                        } else if (shiftType === 'holiday') {
-                            cellClass += ' holiday-shift';
-                            cellContent = 'ห';
-                        } else if (shiftType === 'leave') {
-                            cellClass += ' leave';
-                            cellContent = 'ล';
-                        }
+                    let headerClass = 'border border-gray-300 p-1 text-xs';
+                    if ((holidays && holidays[dateStr]) || dayOfWeek === 0 || dayOfWeek === 6) {
+                        headerClass += ' weekend-header';
                     }
                     
-                    html += `<td class="${cellClass}" onclick="toggleScheduleCell(this, '${empId}', '${dateStr}')">${cellContent}</td>`;
+                    html += `<th class="${headerClass}">${day}<br>${dayName}</th>`;
                 }
-                html += '</tr>';
-            });
-            html += '</tbody></table>';
-            
-            container.innerHTML = html;
-            
-            // Add legend
-            const legend = document.createElement('div');
-            legend.className = 'mt-4 p-4 bg-gray-50 rounded-lg border';
-            legend.innerHTML = `
-                <h4 class="font-semibold text-gray-800 mb-2">หมายเหตุ:</h4>
-                <div class="flex flex-wrap gap-4 text-sm">
-                    <div class="flex items-center gap-2">
-                        <span class="w-6 h-6 bg-emerald-500 text-white rounded text-center text-xs font-bold flex items-center justify-center">ย</span>
-                        <span>เวรเย็น</span>
+                html += '</tr></thead>';
+                
+                // Body
+                html += '<tbody>';
+                Object.entries(employees).forEach(([empId, emp]) => {
+                    if (!emp) return;
+                    
+                    html += '<tr>';
+                    html += `<td class="border border-gray-300 p-2 font-medium text-sm" style="width: 150px; min-width: 150px;">
+                        <div>${emp.firstname || ''} ${emp.lastname || ''}</div>
+                        <div class="text-xs text-gray-600 mt-1">${emp.phone || ''}</div>
+                    </td>`;
+                    
+                    for (let day = 1; day <= daysInMonth; day++) {
+                        const date = new Date(year, month - 1, day);
+                        const dateStr = `${year}-${month.toString().padStart(2, '0')}-${day.toString().padStart(2, '0')}`;
+                        const dayOfWeek = date.getDay();
+                        const scheduleKey = `${empId}_${dateStr}`;
+                        
+                        let cellClass = 'schedule-cell border border-gray-300';
+                        let cellContent = '';
+                        
+                        if (dayOfWeek === 0 || dayOfWeek === 6) cellClass += ' weekend';
+                        if (holidays && holidays[dateStr]) cellClass += ' holiday';
+                        
+                        // Apply saved schedule data
+                        if (scheduleData && scheduleData[scheduleKey]) {
+                            const shiftType = scheduleData[scheduleKey].shiftType;
+                            if (shiftType === 'evening') {
+                                cellClass += ' evening-shift';
+                                cellContent = 'ย';
+                            } else if (shiftType === 'holiday') {
+                                cellClass += ' holiday-shift';
+                                cellContent = 'ห';
+                            } else if (shiftType === 'leave') {
+                                cellClass += ' leave';
+                                cellContent = 'ล';
+                            }
+                        }
+                        
+                        html += `<td class="${cellClass}" onclick="toggleScheduleCell(this, '${empId}', '${dateStr}')">${cellContent}</td>`;
+                    }
+                    html += '</tr>';
+                });
+                html += '</tbody></table>';
+                
+                container.innerHTML = html;
+                
+                // Add legend with holiday details
+                const legend = document.createElement('div');
+                legend.className = 'mt-4 p-4 bg-gray-50 rounded-lg border';
+                
+                // Create holidays list for this month
+                let holidaysInMonth = '';
+                const monthHolidays = [];
+                
+                for (let day = 1; day <= daysInMonth; day++) {
+                    const dateStr = `${year}-${month.toString().padStart(2, '0')}-${day.toString().padStart(2, '0')}`;
+                    if (holidays && holidays[dateStr]) {
+                        const holidayDate = new Date(year, month - 1, day);
+                        const dayName = ['อาทิตย์', 'จันทร์', 'อังคาร', 'พุธ', 'พฤหัสบดี', 'ศุกร์', 'เสาร์'][holidayDate.getDay()];
+                        monthHolidays.push(`${day} ${dayName} - ${holidays[dateStr]}`);
+                    }
+                }
+                
+                if (monthHolidays.length > 0) {
+                    holidaysInMonth = `
+                        <div class="mt-4">
+                            <h5 class="font-medium text-gray-800 mb-2">วันหยุดในเดือนนี้:</h5>
+                            <ul class="text-sm text-gray-700 space-y-1">
+                                ${monthHolidays.map(holiday => `<li>• ${holiday}</li>`).join('')}
+                            </ul>
+                        </div>
+                    `;
+                }
+                
+                legend.innerHTML = `
+                    <h4 class="font-semibold text-gray-800 mb-2">หมายเหตุ:</h4>
+                    <div class="flex flex-wrap gap-4 text-sm">
+                        <div class="flex items-center gap-2">
+                            <span class="w-6 h-6 bg-emerald-500 text-white rounded text-center text-xs font-bold flex items-center justify-center">ย</span>
+                            <span>เวรเย็น</span>
+                        </div>
+                        <div class="flex items-center gap-2">
+                            <span class="w-6 h-6 bg-yellow-500 text-white rounded text-center text-xs font-bold flex items-center justify-center">ห</span>
+                            <span>เวรวันหยุด</span>
+                        </div>
+                        <div class="flex items-center gap-2">
+                            <span class="w-6 h-6 bg-red-500 text-white rounded text-center text-xs font-bold flex items-center justify-center">ล</span>
+                            <span>ลา</span>
+                        </div>
                     </div>
-                    <div class="flex items-center gap-2">
-                        <span class="w-6 h-6 bg-yellow-500 text-white rounded text-center text-xs font-bold flex items-center justify-center">ห</span>
-                        <span>เวรวันหยุด</span>
-                    </div>
-                    <div class="flex items-center gap-2">
-                        <span class="w-6 h-6 bg-red-500 text-white rounded text-center text-xs font-bold flex items-center justify-center">ล</span>
-                        <span>ลา</span>
-                    </div>
-                </div>
-            `;
-            container.appendChild(legend);
-            
-            currentScheduleData = { month, year, daysInMonth };
+                    ${holidaysInMonth}
+                `;
+                container.appendChild(legend);
+                
+                currentScheduleData = { month, year, daysInMonth };
+            } catch (error) {
+                console.error('Error in generateSchedule:', error);
+                const container = document.getElementById('schedule-table');
+                if (container) {
+                    container.innerHTML = '<p class="text-red-500 text-center">เกิดข้อผิดพลาดในการสร้างตาราง</p>';
+                }
+            }
         }
 
         async function toggleScheduleCell(cell, empId, date) {
@@ -1292,18 +1578,7 @@
         }
 
         function updateHolidayList() {
-            const container = document.getElementById('holiday-list');
-            container.innerHTML = '';
-            
-            Object.entries(holidays).forEach(([date, desc]) => {
-                const item = document.createElement('div');
-                item.className = 'flex justify-between items-center mb-1';
-                item.innerHTML = `
-                    <span>${new Date(date).toLocaleDateString('th-TH')}: ${desc}</span>
-                    <button onclick="removeHoliday('${date}')" class="text-red-500 text-sm">ลบ</button>
-                `;
-                container.appendChild(item);
-            });
+            // Holiday list is now shown in the table notes, no need for separate display
         }
 
         function removeHoliday(date) {
@@ -1313,117 +1588,365 @@
         }
 
         // Claim table management
-        function generateClaimTable() {
-            const month = parseInt(document.getElementById('claim-month').value);
-            const year = parseInt(document.getElementById('claim-year').value);
-            
-            const daysInMonth = new Date(year, month, 0).getDate();
-            const container = document.getElementById('claim-table');
-            
-            let html = '<table class="min-w-full border-collapse border border-gray-300">';
-            
-            // Header
-            html += '<thead><tr class="bg-emerald-800 text-white">';
-            html += '<th class="border border-gray-300 p-2">ชื่อ-นามสกุล</th>';
-            html += '<th class="border border-gray-300 p-2">เบอร์โทรศัพท์</th>';
-            
-            for (let day = 1; day <= daysInMonth; day++) {
-                const date = new Date(year, month - 1, day);
-                const dayName = ['อา', 'จ', 'อ', 'พ', 'พฤ', 'ศ', 'ส'][date.getDay()];
-                const dateStr = `${year}-${month.toString().padStart(2, '0')}-${day.toString().padStart(2, '0')}`;
-                const dayOfWeek = date.getDay();
+        async function generateClaimTable() {
+            try {
+                const monthElement = document.getElementById('claim-month');
+                const yearElement = document.getElementById('claim-year');
+                const container = document.getElementById('claim-table');
                 
-                let headerClass = 'border border-gray-300 p-1 text-xs';
-                if (holidays[dateStr] || dayOfWeek === 0 || dayOfWeek === 6) {
-                    headerClass += ' weekend-header';
+                if (!monthElement || !yearElement || !container) {
+                    console.error('Claim table elements not found');
+                    return;
                 }
                 
-                html += `<th class="${headerClass}">${day}<br>${dayName}</th>`;
-            }
-            html += '<th class="border border-gray-300 p-2">รวม</th>';
-            html += '</tr></thead>';
-            
-            // Body
-            html += '<tbody>';
-            Object.entries(employees).forEach(([empId, emp]) => {
-                html += '<tr>';
-                html += `<td class="border border-gray-300 p-2 font-medium">${emp.firstname} ${emp.lastname}</td>`;
-                html += `<td class="border border-gray-300 p-2">${emp.phone}</td>`;
+                const month = parseInt(monthElement.value);
+                const year = parseInt(yearElement.value);
                 
-                let workDays = 0;
+                if (!month || !year) {
+                    container.innerHTML = '<p class="text-red-500 text-center">กรุณาเลือกเดือนและปี</p>';
+                    return;
+                }
+                
+                const daysInMonth = new Date(year, month, 0).getDate();
+                
+                // Show loading
+                container.innerHTML = '<div class="text-center py-8"><div class="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-emerald-600"></div><p class="mt-2 text-gray-600">กำลังสร้างตาราง...</p></div>';
+                
+                if (!employees || Object.keys(employees).length === 0) {
+                    container.innerHTML = '<p class="text-gray-500 text-center">ยังไม่มีข้อมูลพนักงาน กรุณาเพิ่มพนักงานก่อน</p>';
+                    return;
+                }
+                
+                let html = '<table class="min-w-full border-collapse border border-gray-300">';
+                
+                // Header
+                html += '<thead><tr class="bg-emerald-800 text-white">';
+                html += '<th class="border border-gray-300 p-2">ชื่อ-นามสกุล</th>';
                 
                 for (let day = 1; day <= daysInMonth; day++) {
                     const date = new Date(year, month - 1, day);
-                    const dayOfWeek = date.getDay();
+                    const dayName = ['อา', 'จ', 'อ', 'พ', 'พฤ', 'ศ', 'ส'][date.getDay()];
                     const dateStr = `${year}-${month.toString().padStart(2, '0')}-${day.toString().padStart(2, '0')}`;
+                    const dayOfWeek = date.getDay();
                     
-                    // Check work records for this employee and date
-                    const dayRecords = Object.values(workRecords).filter(record => 
-                        record.employeeId === empId && 
-                        (record.date === dateStr || record.claimDate === dateStr)
-                    );
-                    
-                    let cellClass = 'border border-gray-300 p-1 text-center';
-                    let cellContent = '';
-                    
-                    // Add weekend highlighting
-                    if (dayOfWeek === 0 || dayOfWeek === 6) {
-                        cellClass += ' weekend';
+                    let headerClass = 'border border-gray-300 p-1 text-xs';
+                    if ((holidays && holidays[dateStr]) || dayOfWeek === 0 || dayOfWeek === 6) {
+                        headerClass += ' weekend-header';
                     }
                     
-                    if (holidays[dateStr]) {
-                        cellClass += ' holiday';
-                    } else {
-                        const normalWork = dayRecords.filter(r => r.date === dateStr && r.type === 'normal');
-                        const eveningClaims = dayRecords.filter(r => r.claimDate === dateStr && r.type === 'evening');
-                        const holidayClaims = dayRecords.filter(r => r.claimDate === dateStr && r.type === 'holiday');
+                    html += `<th class="${headerClass}">${day}<br>${dayName}</th>`;
+                }
+                html += '<th class="border border-gray-300 p-2">รวม</th>';
+                html += '</tr></thead>';
+                
+                // Body
+                html += '<tbody>';
+                
+                // Load schedule data once
+                const scheduleData = await loadScheduleData();
+                
+                Object.entries(employees).forEach(([empId, emp]) => {
+                    if (!emp) return;
+                    
+                    html += '<tr>';
+                    html += `<td class="border border-gray-300 p-2 font-medium text-sm" style="width: 150px; min-width: 150px;">
+                        <div>${emp.firstname || ''} ${emp.lastname || ''}</div>
+                        <div class="text-xs text-gray-600 mt-1">${emp.phone || ''}</div>
+                    </td>`;
+                    
+                    let workDays = 0;
+                    
+                    for (let day = 1; day <= daysInMonth; day++) {
+                        const date = new Date(year, month - 1, day);
+                        const dayOfWeek = date.getDay();
+                        const dateStr = `${year}-${month.toString().padStart(2, '0')}-${day.toString().padStart(2, '0')}`;
                         
-                        if (normalWork.length > 0) {
-                            cellClass += ' work-day';
-                            workDays++;
-                        } else if (eveningClaims.length === 2) {
-                            cellClass += ' work-day';
-                            workDays++;
-                        } else if (eveningClaims.length === 1) {
-                            cellClass += ' warning';
-                        } else if (holidayClaims.length > 0) {
-                            cellClass += ' work-day';
-                            workDays++;
+                        // Check work records for this employee and date
+                        const dayRecords = workRecords ? Object.values(workRecords).filter(record => 
+                            record && record.employeeId === empId && 
+                            (record.date === dateStr || record.claimDate === dateStr)
+                        ) : [];
+                        
+                        let cellClass = 'border border-gray-300 p-1 text-center';
+                        let cellContent = '';
+                        
+                        // Add weekend highlighting
+                        if (dayOfWeek === 0 || dayOfWeek === 6) {
+                            cellClass += ' weekend';
                         }
+                        
+                        if (holidays && holidays[dateStr]) {
+                            cellClass += ' holiday';
+                        } else {
+                            // Check if this employee has leave on this date from schedule
+                            const scheduleKey = `${empId}_${dateStr}`;
+                            const isLeave = scheduleData && scheduleData[scheduleKey] && scheduleData[scheduleKey].shiftType === 'leave';
+                            
+                            if (isLeave) {
+                                cellClass += ' leave';
+                            } else {
+                                const normalWork = dayRecords.filter(r => r.date === dateStr && r.type === 'normal');
+                                const eveningClaims = dayRecords.filter(r => r.claimDate === dateStr && r.type === 'evening');
+                                const holidayClaims = dayRecords.filter(r => r.claimDate === dateStr && r.type === 'holiday');
+                                
+                                if (normalWork.length > 0) {
+                                    cellClass += ' work-day';
+                                    workDays++;
+                                } else if (eveningClaims.length === 2) {
+                                    cellClass += ' work-day';
+                                    workDays++;
+                                } else if (eveningClaims.length === 1) {
+                                    cellClass += ' warning';
+                                } else if (holidayClaims.length > 0) {
+                                    cellClass += ' work-day';
+                                    workDays++;
+                                }
+                            }
+                        }
+                        
+                        html += `<td class="${cellClass} claim-cell" onclick="showClaimDetails('${empId}', '${dateStr}', ${day})">${cellContent}</td>`;
                     }
                     
-                    html += `<td class="${cellClass}">${cellContent}</td>`;
+                    html += `<td class="border border-gray-300 p-2 text-center font-bold">${workDays}</td>`;
+                    html += '</tr>';
+                });
+                html += '</tbody></table>';
+                
+                container.innerHTML = html;
+                
+                // Add legend for claim table
+                const legend = document.createElement('div');
+                legend.className = 'mt-4 p-4 bg-gray-50 rounded-lg border';
+                
+                // Create holidays list for this month
+                let holidaysInMonth = '';
+                const monthHolidays = [];
+                
+                for (let day = 1; day <= daysInMonth; day++) {
+                    const dateStr = `${year}-${month.toString().padStart(2, '0')}-${day.toString().padStart(2, '0')}`;
+                    if (holidays && holidays[dateStr]) {
+                        const holidayDate = new Date(year, month - 1, day);
+                        const dayName = ['อาทิตย์', 'จันทร์', 'อังคาร', 'พุธ', 'พฤหัสบดี', 'ศุกร์', 'เสาร์'][holidayDate.getDay()];
+                        monthHolidays.push(`${day} ${dayName} - ${holidays[dateStr]}`);
+                    }
                 }
                 
-                html += `<td class="border border-gray-300 p-2 text-center font-bold">${workDays}</td>`;
-                html += '</tr>';
-            });
-            html += '</tbody></table>';
-            
-            container.innerHTML = html;
+                if (monthHolidays.length > 0) {
+                    holidaysInMonth = `
+                        <div class="mt-4">
+                            <h5 class="font-medium text-gray-800 mb-2">วันหยุดในเดือนนี้:</h5>
+                            <ul class="text-sm text-gray-700 space-y-1">
+                                ${monthHolidays.map(holiday => `<li>• ${holiday}</li>`).join('')}
+                            </ul>
+                        </div>
+                    `;
+                }
+                
+                legend.innerHTML = `
+                    <h4 class="font-semibold text-gray-800 mb-2">หมายเหตุ:</h4>
+                    <div class="flex flex-wrap gap-4 text-sm">
+                        <div class="flex items-center gap-2">
+                            <span class="w-6 h-6 bg-red-500 rounded"></span>
+                            <span>ช่องสีแดง คือ ลา</span>
+                        </div>
+                        <div class="flex items-center gap-2">
+                            <span class="w-6 h-6 bg-emerald-500 rounded"></span>
+                            <span>ช่องสีเขียว คือ เบิกได้</span>
+                        </div>
+                        <div class="flex items-center gap-2">
+                            <span class="w-6 h-6 bg-yellow-500 rounded"></span>
+                            <span>ช่องสีเหลือง คือ เวรยังไม่ครบ</span>
+                        </div>
+                    </div>
+                    ${holidaysInMonth}
+                `;
+                container.appendChild(legend);
+            } catch (error) {
+                console.error('Error in generateClaimTable:', error);
+                const container = document.getElementById('claim-table');
+                if (container) {
+                    container.innerHTML = '<p class="text-red-500 text-center">เกิดข้อผิดพลาดในการสร้างตาราง</p>';
+                }
+            }
         }
 
         // Export functions
         function exportSummary() {
-            const data = [];
-            const summaryCards = document.querySelectorAll('#summary-results .card');
+            const startDate = document.getElementById('summary-start-date').value;
+            const endDate = document.getElementById('summary-end-date').value;
+            const selectedTasks = getSelectedTasks();
+            const selectedPersons = getSelectedPersons();
             
-            summaryCards.forEach(card => {
-                const taskName = card.querySelector('h3').textContent;
-                const amountText = card.querySelector('p').textContent;
-                // Extract amount and unit from "จำนวน: 123 หน่วย"
-                const match = amountText.match(/จำนวน:\s*(\d+(?:\.\d+)?)\s*(.+)/);
-                const amount = match ? match[1] : '';
-                const unit = match ? match[2] : '';
+            if (!startDate || !endDate) {
+                alert('กรุณาเลือกวันที่เริ่มต้นและวันที่สิ้นสุด');
+                return;
+            }
+            
+            if (startDate > endDate) {
+                alert('วันที่เริ่มต้นต้องไม่เกินวันที่สิ้นสุด');
+                return;
+            }
+            
+            // Show loading indicator
+            const originalText = event.target.textContent;
+            event.target.textContent = 'กำลังส่งออก...';
+            event.target.disabled = true;
+            
+            try {
+                // Process data for export using the same logic as loadSummary
+                const summaryData = {};
+                const otherActivities = [];
+                const detailData = [];
                 
-                data.push({ 
-                    'ภาระงาน': taskName, 
-                    'จำนวน': amount,
-                    'หน่วย': unit
+                // Process work records
+                Object.entries(workRecords || {}).forEach(([id, record]) => {
+                    // Check if person should be included based on selection
+                    if (selectedPersons !== 'all' && Array.isArray(selectedPersons) && !selectedPersons.includes(record.employeeId)) return;
+                    
+                    // Check if record date is within the selected range
+                    if (record.date < startDate || record.date > endDate) return;
+                    
+                    const employee = employees[record.employeeId];
+                    if (!employee) return;
+                    
+                    const employeeName = `${employee.firstname} ${employee.lastname}`;
+                    const typeText = {
+                        'normal': 'วันทำงานปกติ',
+                        'evening': 'เวรเย็น',
+                        'holiday': 'เวรวันหยุด'
+                    };
+                    
+                    // Process regular tasks
+                    if (record.tasks && Array.isArray(record.tasks)) {
+                        record.tasks.forEach(task => {
+                            // Check if task should be included based on selection
+                            if (selectedTasks !== 'all' && Array.isArray(selectedTasks) && !selectedTasks.includes(task.taskId)) return;
+                            
+                            const taskInfo = tasks[task.taskId];
+                            if (!taskInfo) return;
+                            
+                            const taskKey = taskInfo.name;
+                            if (!summaryData[taskKey]) {
+                                summaryData[taskKey] = { amount: 0, unit: taskInfo.unit };
+                            }
+                            summaryData[taskKey].amount += parseFloat(task.amount) || 0;
+                            
+                            // Add to detail data
+                            detailData.push({
+                                'ชื่อ-นามสกุล': employeeName,
+                                'วันที่ทำงาน': new Date(record.date).toLocaleDateString('th-TH'),
+                                'ประเภท': typeText[record.type] || record.type,
+                                'วันที่เบิก': record.claimDate ? new Date(record.claimDate).toLocaleDateString('th-TH') : '',
+                                'ภาระงาน': taskInfo.name,
+                                'จำนวน': task.amount,
+                                'หน่วย': taskInfo.unit,
+                                'หมายเหตุ': record.other || ''
+                            });
+                        });
+                    }
+                    
+                    // Process "อื่น ๆ" activities
+                    if (record.other && record.other.trim() && 
+                        (selectedTasks === 'all' || (Array.isArray(selectedTasks) && selectedTasks.includes('other')))) {
+                        otherActivities.push({
+                            'ชื่อ-นามสกุล': employeeName,
+                            'วันที่ทำงาน': new Date(record.date).toLocaleDateString('th-TH'),
+                            'ประเภท': typeText[record.type] || record.type,
+                            'วันที่เบิก': record.claimDate ? new Date(record.claimDate).toLocaleDateString('th-TH') : '',
+                            'กิจกรรม': record.other.trim()
+                        });
+                    }
                 });
-            });
-            
-            exportToExcel(data, 'สรุปผลงาน');
+                
+                // Create summary sheet data
+                const summarySheetData = [];
+                Object.entries(summaryData).forEach(([taskName, taskData]) => {
+                    summarySheetData.push({
+                        'ภาระงาน': taskName,
+                        'จำนวนรวม': taskData.amount,
+                        'หน่วย': taskData.unit
+                    });
+                });
+                
+                // Check if there's any data to export
+                if (summarySheetData.length === 0 && detailData.length === 0 && otherActivities.length === 0) {
+                    alert('ไม่มีข้อมูลในช่วงเวลาที่เลือกสำหรับส่งออก');
+                    return;
+                }
+                
+                // Create workbook with multiple sheets
+                const wb = XLSX.utils.book_new();
+                
+                // Summary sheet
+                if (summarySheetData.length > 0) {
+                    const summaryWs = XLSX.utils.json_to_sheet(summarySheetData);
+                    
+                    // Set column widths
+                    summaryWs['!cols'] = [
+                        { width: 30 }, // ภาระงาน
+                        { width: 15 }, // จำนวนรวม
+                        { width: 15 }  // หน่วย
+                    ];
+                    
+                    XLSX.utils.book_append_sheet(wb, summaryWs, 'สรุปผลงาน');
+                }
+                
+                // Detail sheet
+                if (detailData.length > 0) {
+                    const detailWs = XLSX.utils.json_to_sheet(detailData);
+                    
+                    // Set column widths
+                    detailWs['!cols'] = [
+                        { width: 20 }, // ชื่อ-นามสกุล
+                        { width: 15 }, // วันที่ทำงาน
+                        { width: 15 }, // ประเภท
+                        { width: 15 }, // วันที่เบิก
+                        { width: 25 }, // ภาระงาน
+                        { width: 10 }, // จำนวน
+                        { width: 10 }, // หน่วย
+                        { width: 30 }  // หมายเหตุ
+                    ];
+                    
+                    XLSX.utils.book_append_sheet(wb, detailWs, 'รายละเอียด');
+                }
+                
+                // Other activities sheet
+                if (otherActivities.length > 0) {
+                    const otherWs = XLSX.utils.json_to_sheet(otherActivities);
+                    
+                    // Set column widths
+                    otherWs['!cols'] = [
+                        { width: 20 }, // ชื่อ-นามสกุล
+                        { width: 15 }, // วันที่ทำงาน
+                        { width: 15 }, // ประเภท
+                        { width: 15 }, // วันที่เบิก
+                        { width: 40 }  // กิจกรรม
+                    ];
+                    
+                    XLSX.utils.book_append_sheet(wb, otherWs, 'กิจกรรมอื่นๆ');
+                }
+                
+                // Generate filename with date range
+                const startDateFormatted = new Date(startDate).toLocaleDateString('th-TH');
+                const endDateFormatted = new Date(endDate).toLocaleDateString('th-TH');
+                const filename = `สรุปผลงาน_${startDateFormatted.replace(/\//g, '-')}_ถึง_${endDateFormatted.replace(/\//g, '-')}`;
+                
+                // Write file
+                XLSX.writeFile(wb, `${filename}.xlsx`);
+                
+                // Show success message
+                setTimeout(() => {
+                    alert(`ส่งออกไฟล์ Excel สำเร็จ!\n\nไฟล์: ${filename}.xlsx\n\nแผ่นงาน:\n${summarySheetData.length > 0 ? '- สรุปผลงาน\n' : ''}${detailData.length > 0 ? '- รายละเอียด\n' : ''}${otherActivities.length > 0 ? '- กิจกรรมอื่นๆ' : ''}`);
+                }, 100);
+                
+            } catch (error) {
+                console.error('Export error:', error);
+                alert('เกิดข้อผิดพลาดในการส่งออกไฟล์ Excel กรุณาลองใหม่อีกครั้ง');
+            } finally {
+                // Reset button
+                event.target.textContent = originalText;
+                event.target.disabled = false;
+            }
         }
 
         function exportHistory() {
@@ -1482,18 +2005,39 @@
             }
             
             const data = [];
-            const table = document.querySelector('#schedule-table table');
-            const rows = table.querySelectorAll('tbody tr');
             
-            rows.forEach(row => {
-                const cells = row.querySelectorAll('td');
+            Object.entries(employees).forEach(([empId, emp]) => {
                 const rowData = {
-                    'ชื่อ-นามสกุล': cells[0].textContent,
-                    'เบอร์โทรศัพท์': cells[1].textContent
+                    'ชื่อ-นามสกุล': `${emp.firstname} ${emp.lastname}`,
+                    'เบอร์โทรศัพท์': emp.phone
                 };
                 
-                for (let i = 2; i < cells.length; i++) {
-                    rowData[`วันที่ ${i-1}`] = cells[i].textContent;
+                // Add schedule data for each day
+                for (let day = 1; day <= currentScheduleData.daysInMonth; day++) {
+                    const dateStr = `${currentScheduleData.year}-${currentScheduleData.month.toString().padStart(2, '0')}-${day.toString().padStart(2, '0')}`;
+                    const scheduleKey = `${empId}_${dateStr}`;
+                    
+                    let cellValue = '';
+                    
+                    // Check if it's a holiday
+                    if (holidays && holidays[dateStr]) {
+                        cellValue = 'วันหยุด';
+                    } else {
+                        // Check schedule data from database
+                        const scheduleData = currentScheduleData.scheduleData || {};
+                        if (scheduleData[scheduleKey]) {
+                            const shiftType = scheduleData[scheduleKey].shiftType;
+                            if (shiftType === 'evening') {
+                                cellValue = 'เวรเย็น';
+                            } else if (shiftType === 'holiday') {
+                                cellValue = 'เวรวันหยุด';
+                            } else if (shiftType === 'leave') {
+                                cellValue = 'ลา';
+                            }
+                        }
+                    }
+                    
+                    rowData[`วันที่ ${day}`] = cellValue;
                 }
                 
                 data.push(rowData);
@@ -1612,6 +2156,188 @@
             XLSX.utils.book_append_sheet(wb, ws, 'Sheet1');
             XLSX.writeFile(wb, `${filename}.xlsx`);
         }
+
+        // Claim popup functions
+        function showClaimDetails(empId, date, day) {
+            const employee = employees[empId];
+            if (!employee) return;
+            
+            const dateStr = date;
+            const displayDate = new Date(date).toLocaleDateString('th-TH');
+            const dayOfWeek = ['อาทิตย์', 'จันทร์', 'อังคาร', 'พุธ', 'พฤหัสบดี', 'ศุกร์', 'เสาร์'][new Date(date).getDay()];
+            
+            // Check if it's a holiday
+            if (holidays && holidays[dateStr]) {
+                const popupContent = document.getElementById('claim-popup-content');
+                popupContent.innerHTML = `
+                    <div class="text-center">
+                        <div class="mb-4">
+                            <h4 class="text-lg font-semibold text-gray-800">${employee.firstname} ${employee.lastname}</h4>
+                            <p class="text-gray-600">${employee.phone}</p>
+                        </div>
+                        <div class="bg-gray-100 p-4 rounded-lg">
+                            <p class="text-lg font-medium">วันที่ ${day} (${dayOfWeek})</p>
+                            <p class="text-gray-600">${displayDate}</p>
+                            <div class="mt-3 p-3 bg-yellow-100 rounded-lg">
+                                <p class="text-yellow-800 font-medium">วันหยุด: ${holidays[dateStr]}</p>
+                            </div>
+                        </div>
+                    </div>
+                `;
+                document.getElementById('claim-popup').classList.remove('hidden');
+                return;
+            }
+            
+            // Get work records for this employee and date
+            const dayRecords = workRecords ? Object.values(workRecords).filter(record => 
+                record && record.employeeId === empId && 
+                (record.date === dateStr || record.claimDate === dateStr)
+            ) : [];
+            
+            const normalWork = dayRecords.filter(r => r.date === dateStr && r.type === 'normal');
+            const eveningClaims = dayRecords.filter(r => r.claimDate === dateStr && r.type === 'evening');
+            const holidayClaims = dayRecords.filter(r => r.claimDate === dateStr && r.type === 'holiday');
+            
+            let statusHtml = '';
+            let detailsHtml = '';
+            
+            if (normalWork.length > 0) {
+                statusHtml = '<div class="bg-green-100 p-3 rounded-lg"><p class="text-green-800 font-medium">✓ เบิกได้ - ทำงานปกติ</p></div>';
+                
+                normalWork.forEach(record => {
+                    let tasksHtml = '';
+                    if (record.tasks && Array.isArray(record.tasks) && record.tasks.length > 0) {
+                        tasksHtml = record.tasks.map(task => {
+                            const taskInfo = tasks[task.taskId];
+                            return taskInfo ? `<li>${taskInfo.name}: ${task.amount} ${taskInfo.unit}</li>` : '';
+                        }).filter(t => t).join('');
+                    }
+                    
+                    detailsHtml += `
+                        <div class="border-l-4 border-green-500 pl-4 mb-3">
+                            <p class="font-medium">ทำงานปกติ</p>
+                            ${tasksHtml ? `<ul class="text-sm text-gray-600 mt-1 ml-4">${tasksHtml}</ul>` : ''}
+                            ${record.other ? `<p class="text-sm text-gray-600 mt-1">งานอื่น ๆ : ${record.other}</p>` : ''}
+                        </div>
+                    `;
+                });
+            } else if (eveningClaims.length >= 2) {
+                statusHtml = '<div class="bg-green-100 p-3 rounded-lg"><p class="text-green-800 font-medium">✓ เบิกได้ - เวรเย็น (ครบ 2 วัน)</p></div>';
+                
+                eveningClaims.forEach(record => {
+                    const workDate = new Date(record.date).toLocaleDateString('th-TH');
+                    let tasksHtml = '';
+                    if (record.tasks && Array.isArray(record.tasks) && record.tasks.length > 0) {
+                        tasksHtml = record.tasks.map(task => {
+                            const taskInfo = tasks[task.taskId];
+                            return taskInfo ? `<li>${taskInfo.name}: ${task.amount} ${taskInfo.unit}</li>` : '';
+                        }).filter(t => t).join('');
+                    }
+                    
+                    detailsHtml += `
+                        <div class="border-l-4 border-green-500 pl-4 mb-3">
+                            <p class="font-medium">เวรเย็น - ทำงานวันที่ ${workDate}</p>
+                            ${tasksHtml ? `<ul class="text-sm text-gray-600 mt-1 ml-4">${tasksHtml}</ul>` : ''}
+                            ${record.other ? `<p class="text-sm text-gray-600 mt-1">งานอื่น ๆ : ${record.other}</p>` : ''}
+                        </div>
+                    `;
+                });
+            } else if (eveningClaims.length === 1) {
+                statusHtml = '<div class="bg-yellow-100 p-3 rounded-lg"><p class="text-yellow-800 font-medium">⚠ เวรยังไม่ครบ - ต้องทำ 2 วัน</p></div>';
+                
+                const record = eveningClaims[0];
+                const workDate = new Date(record.date).toLocaleDateString('th-TH');
+                let tasksHtml = '';
+                if (record.tasks && Array.isArray(record.tasks) && record.tasks.length > 0) {
+                    tasksHtml = record.tasks.map(task => {
+                        const taskInfo = tasks[task.taskId];
+                        return taskInfo ? `<li>${taskInfo.name}: ${task.amount} ${taskInfo.unit}</li>` : '';
+                    }).filter(t => t).join('');
+                }
+                
+                detailsHtml += `
+                    <div class="border-l-4 border-yellow-500 pl-4 mb-3">
+                        <p class="font-medium">เวรเย็น - ทำงานวันที่ ${workDate}</p>
+                        ${tasksHtml ? `<ul class="text-sm text-gray-600 mt-1 ml-4">${tasksHtml}</ul>` : ''}
+                        ${record.other ? `<p class="text-sm text-gray-600 mt-1">หมายเหตุ: ${record.other}</p>` : ''}
+                        <p class="text-sm text-yellow-700 mt-2">ต้องทำเวรเย็นอีก 1 วัน เพื่อให้ครบ 2 วัน</p>
+                    </div>
+                `;
+            } else if (holidayClaims.length > 0) {
+                statusHtml = '<div class="bg-green-100 p-3 rounded-lg"><p class="text-green-800 font-medium">✓ เบิกได้ - เวรวันหยุด</p></div>';
+                
+                holidayClaims.forEach(record => {
+                    const workDate = new Date(record.date).toLocaleDateString('th-TH');
+                    let tasksHtml = '';
+                    if (record.tasks && Array.isArray(record.tasks) && record.tasks.length > 0) {
+                        tasksHtml = record.tasks.map(task => {
+                            const taskInfo = tasks[task.taskId];
+                            return taskInfo ? `<li>${taskInfo.name}: ${task.amount} ${taskInfo.unit}</li>` : '';
+                        }).filter(t => t).join('');
+                    }
+                    
+                    detailsHtml += `
+                        <div class="border-l-4 border-green-500 pl-4 mb-3">
+                            <p class="font-medium">เวรวันหยุด - ทำงานวันที่ ${workDate}</p>
+                            ${tasksHtml ? `<ul class="text-sm text-gray-600 mt-1 ml-4">${tasksHtml}</ul>` : ''}
+                            ${record.other ? `<p class="text-sm text-gray-600 mt-1">งานอื่น ๆ : ${record.other}</p>` : ''}
+                        </div>
+                    `;
+                });
+            } else {
+                // Check if it's leave from schedule
+                const scheduleData = currentScheduleData.scheduleData || {};
+                const scheduleKey = `${empId}_${dateStr}`;
+                const isLeave = scheduleData[scheduleKey] && scheduleData[scheduleKey].shiftType === 'leave';
+                
+                if (isLeave) {
+                    statusHtml = '<div class="bg-red-100 p-3 rounded-lg"><p class="text-red-800 font-medium">ลา</p></div>';
+                    detailsHtml = '<p class="text-gray-600">ไม่มีการทำงานในวันนี้ (ลา)</p>';
+                } else {
+                    statusHtml = '<div class="bg-gray-100 p-3 rounded-lg"><p class="text-gray-800 font-medium">ไม่มีการทำงาน</p></div>';
+                    detailsHtml = '<p class="text-gray-600">ไม่มีการบันทึกการทำงานในวันนี้</p>';
+                }
+            }
+            
+            const popupContent = document.getElementById('claim-popup-content');
+            popupContent.innerHTML = `
+                <div>
+                    <div class="mb-4">
+                        <h4 class="text-lg font-semibold text-gray-800">${employee.firstname} ${employee.lastname}</h4>
+                        <p class="text-gray-600">${employee.phone}</p>
+                    </div>
+                    <div class="mb-4">
+                        <p class="text-lg font-medium">วันที่ ${day} (${dayOfWeek})</p>
+                        <p class="text-gray-600">${displayDate}</p>
+                    </div>
+                    <div class="mb-4">
+                        ${statusHtml}
+                    </div>
+                    <div>
+                        <h5 class="font-medium text-gray-800 mb-2">รายละเอียด:</h5>
+                        ${detailsHtml}
+                    </div>
+                </div>
+            `;
+            
+            document.getElementById('claim-popup').classList.remove('hidden');
+        }
+        
+        function closeClaimPopup() {
+            document.getElementById('claim-popup').classList.add('hidden');
+        }
+        
+        // Close popup when clicking outside
+        document.addEventListener('click', function(event) {
+            const popup = document.getElementById('claim-popup');
+            const popupContent = popup.querySelector('.popup-content');
+            
+            if (popup && !popup.classList.contains('hidden') && 
+                !popupContent.contains(event.target) && 
+                event.target === popup) {
+                closeClaimPopup();
+            }
+        });
     </script>
-<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'9584ea7295f34ba6',t:'MTc1MTM2MjU1My4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'95878ec7328f7dbb',t:'MTc1MTM5MDI1NS4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
 </html>
