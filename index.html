@@ -2005,18 +2005,39 @@
             }
             
             const data = [];
-            const table = document.querySelector('#schedule-table table');
-            const rows = table.querySelectorAll('tbody tr');
             
-            rows.forEach(row => {
-                const cells = row.querySelectorAll('td');
+            Object.entries(employees).forEach(([empId, emp]) => {
                 const rowData = {
-                    'ชื่อ-นามสกุล': cells[0].textContent,
-                    'เบอร์โทรศัพท์': cells[1].textContent
+                    'ชื่อ-นามสกุล': `${emp.firstname} ${emp.lastname}`,
+                    'เบอร์โทรศัพท์': emp.phone
                 };
                 
-                for (let i = 2; i < cells.length; i++) {
-                    rowData[`วันที่ ${i-1}`] = cells[i].textContent;
+                // Add schedule data for each day
+                for (let day = 1; day <= currentScheduleData.daysInMonth; day++) {
+                    const dateStr = `${currentScheduleData.year}-${currentScheduleData.month.toString().padStart(2, '0')}-${day.toString().padStart(2, '0')}`;
+                    const scheduleKey = `${empId}_${dateStr}`;
+                    
+                    let cellValue = '';
+                    
+                    // Check if it's a holiday
+                    if (holidays && holidays[dateStr]) {
+                        cellValue = 'วันหยุด';
+                    } else {
+                        // Check schedule data from database
+                        const scheduleData = currentScheduleData.scheduleData || {};
+                        if (scheduleData[scheduleKey]) {
+                            const shiftType = scheduleData[scheduleKey].shiftType;
+                            if (shiftType === 'evening') {
+                                cellValue = 'เวรเย็น';
+                            } else if (shiftType === 'holiday') {
+                                cellValue = 'เวรวันหยุด';
+                            } else if (shiftType === 'leave') {
+                                cellValue = 'ลา';
+                            }
+                        }
+                    }
+                    
+                    rowData[`วันที่ ${day}`] = cellValue;
                 }
                 
                 data.push(rowData);
@@ -2024,7 +2045,6 @@
             
             exportToExcel(data, 'ตารางเวร');
         }
-
 
         function exportClaim() {
             const month = parseInt(document.getElementById('claim-month').value);
@@ -2319,5 +2339,5 @@
             }
         });
     </script>
-<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'95878ec7328f7dbb',t:'MTc1MTM5MDI1NS4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'958ab5b5e2997dc6',t:'MTc1MTQyMzMwNy4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
 </html>
