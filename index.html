@@ -2020,8 +2020,6 @@
                     let cellValue = '';
                     
                         // Check schedule data from database
-                        const scheduleData = currentScheduleData.scheduleData || {};
-                        if (scheduleData[scheduleKey]) {
                             const shiftType = scheduleData[scheduleKey].shiftType;
                             if (shiftType === 'evening') {
                                 cellValue = 'เวรเย็น';
@@ -2030,7 +2028,6 @@
                             } else if (shiftType === 'leave') {
                                 cellValue = 'ลา';
                             }
-                        }
                     
                     rowData[`วันที่ ${day}`] = cellValue;
                 }
