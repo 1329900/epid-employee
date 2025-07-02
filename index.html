@@ -2005,18 +2005,34 @@
             }
             
             const data = [];
-            const table = document.querySelector('#schedule-table table');
-            const rows = table.querySelectorAll('tbody tr');
             
-            rows.forEach(row => {
-                const cells = row.querySelectorAll('td');
+            Object.entries(employees).forEach(([empId, emp]) => {
                 const rowData = {
-                    'ชื่อ-นามสกุล': cells[0].textContent,
-                    'เบอร์โทรศัพท์': cells[1].textContent
+                    'ชื่อ-นามสกุล': `${emp.firstname} ${emp.lastname}`,
+                    'เบอร์โทรศัพท์': emp.phone
                 };
                 
-                for (let i = 2; i < cells.length; i++) {
-                    rowData[`วันที่ ${i-1}`] = cells[i].textContent;
+                // Add schedule data for each day
+                for (let day = 1; day <= currentScheduleData.daysInMonth; day++) {
+                    const dateStr = `${currentScheduleData.year}-${currentScheduleData.month.toString().padStart(2, '0')}-${day.toString().padStart(2, '0')}`;
+                    const scheduleKey = `${empId}_${dateStr}`;
+                    
+                    let cellValue = '';
+                    
+                        // Check schedule data from database
+                        const scheduleData = currentScheduleData.scheduleData || {};
+                        if (scheduleData[scheduleKey]) {
+                            const shiftType = scheduleData[scheduleKey].shiftType;
+                            if (shiftType === 'evening') {
+                                cellValue = 'เวรเย็น';
+                            } else if (shiftType === 'holiday') {
+                                cellValue = 'เวรวันหยุด';
+                            } else if (shiftType === 'leave') {
+                                cellValue = 'ลา';
+                            }
+                        }
+                    
+                    rowData[`วันที่ ${day}`] = cellValue;
                 }
                 
                 data.push(rowData);
