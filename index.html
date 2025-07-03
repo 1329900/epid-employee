@@ -2322,32 +2322,11 @@ async function exportSchedulePDF() {
         return;
     }
 
-    // --- เพิ่ม: จัดกลางข้อความในทุก cell เฉพาะตอน export ---
-    const table = exportArea.querySelector('table');
-    let oldAlign = [], oldVAlign = [];
-    if (table) {
-        const cells = table.querySelectorAll('th, td');
-        cells.forEach((cell, idx) => {
-            oldAlign[idx] = cell.style.textAlign;
-            oldVAlign[idx] = cell.style.verticalAlign;
-            cell.style.textAlign = 'center';
-            cell.style.verticalAlign = 'middle';
-        });
-    }
-
     html2canvas(exportArea, {
         scale: 2,
         useCORS: true,
         backgroundColor: "#fff"
     }).then(function(canvas) {
-        // --- คืนค่า align เดิมหลัง export เสร็จ ---
-        if (table) {
-            const cells = table.querySelectorAll('th, td');
-            cells.forEach((cell, idx) => {
-                cell.style.textAlign = oldAlign[idx];
-                cell.style.verticalAlign = oldVAlign[idx];
-            });
-        }
 
         const imgData = canvas.toDataURL('image/png');
         const imgWidthPx = canvas.width;
@@ -2360,19 +2339,25 @@ async function exportSchedulePDF() {
             unit: 'pt',
             format: 'a4'
         });
-        const pageWidth = pdf.internal.pageSize.getWidth();
-        const pageHeight = pdf.internal.pageSize.getHeight();
+        const pageWidth = pdf.internal.pageSize.getWidth();   // 841.89 pt
+        const pageHeight = pdf.internal.pageSize.getHeight(); // 595.28 pt
+
+        // พื้นที่สำหรับภาพหลังหัก margin
         const maxWidth = pageWidth - 2 * margin;
         const maxHeight = pageHeight - 2 * margin;
 
+        // แปลง px → pt (96px = 72pt)
         const pxPerPt = 96 / 72;
         const imgWidthPt = imgWidthPx / pxPerPt;
         const imgHeightPt = imgHeightPx / pxPerPt;
 
+        // scale เพื่อ fit ทั้งแนวกว้างและแนวสูง (สำคัญ!)
         const scale = Math.min(maxWidth / imgWidthPt, maxHeight / imgHeightPt);
+
         const renderWidth = imgWidthPt * scale;
         const renderHeight = imgHeightPt * scale;
 
+        // จัดภาพให้อยู่กลางระหว่าง margin
         const x = margin + (maxWidth - renderWidth) / 2;
         const y = margin + (maxHeight - renderHeight) / 2;
 
@@ -2384,6 +2369,7 @@ async function exportSchedulePDF() {
             renderWidth,
             renderHeight
         );
+
         pdf.save('ตารางเวร.pdf');
     });
 }
