@@ -291,6 +291,7 @@
                     <div class="mt-4">
                         <label for="schedule-note" class="block text-sm font-medium mb-2">หมายเหตุ</label>
                         <textarea id="schedule-note" class="input-field w-full" rows="2" placeholder="หมายเหตุสำหรับตารางเวร..."></textarea>
+                        <div id="schedule-note-text" style="display: none;" class="input-field w-full mt-2"></div>
                     </div>
                 </div>
                 <div id="schedule-table" class="overflow-x-auto"></div>
@@ -2036,82 +2037,69 @@
         }
 
         // เพิ่มฟังก์ชันนี้ใน <script>
-async function exportSchedulePDF() {
-    const exportArea = document.getElementById('schedule-export-area');
-    if (!exportArea) {
-        alert('ไม่พบพื้นที่ส่งออก PDF');
-        return;
-    }
-
-    // ถ้าหมายเหตุเป็น textarea ให้แปลงเป็น div ชั่วคราวก่อนแคป (เพื่อให้ PDF เป็นข้อความ ไม่ใช่กล่อง input)
-    const noteTextarea = document.getElementById('schedule-note');
-    let noteValue = "";
-    let noteDiv;
-    if (noteTextarea && noteTextarea.tagName.toLowerCase() === 'textarea') {
-        noteValue = noteTextarea.value;
-        noteDiv = document.createElement('div');
-        noteDiv.className = noteTextarea.className;
-        noteDiv.style.minHeight = noteTextarea.offsetHeight + 'px';
-        noteDiv.style.border = noteTextarea.style.border;
-        noteDiv.textContent = noteValue;
-        noteDiv.id = 'schedule-note-temp';
-        noteTextarea.parentNode.insertBefore(noteDiv, noteTextarea);
-        noteTextarea.style.display = 'none';
-    }
-
-    // แคป div ทั้งก้อน
-    html2canvas(exportArea, { scale: 2 }).then(function(canvas) {
-        // คืนค่า textarea
-        if (noteTextarea) {
-            noteTextarea.style.display = '';
-            if (noteDiv) noteDiv.remove();
-        }
-
-        const imgData = canvas.toDataURL('image/png');
-        const pdf = new window.jspdf.jsPDF({
-            orientation: 'landscape',
-            unit: 'pt',
-            format: 'a4'
-        });
-
-        const pageWidth = pdf.internal.pageSize.getWidth();
-        const pageHeight = pdf.internal.pageSize.getHeight();
-
-        // ปรับขนาดภาพให้เต็ม width และกระจายหลายหน้า (ถ้าสูงเกิน 1 page)
-        const imgWidth = pageWidth - 40;
-        const imgHeight = canvas.height * imgWidth / canvas.width;
-
-        let position = 20;
-        let remainingHeight = imgHeight;
-        let imgY = 20;
-        let sourceY = 0;
-        let pageImgHeight = pageHeight - 40;
-
-        while (remainingHeight > 0) {
-            pdf.addImage(
-                imgData,
-                'PNG',
-                20,
-                imgY,
-                imgWidth,
-                Math.min(pageImgHeight, remainingHeight),
-                undefined,
-                'FAST',
-                0,
-                sourceY * canvas.width / imgHeight,
-                0,
-                (Math.min(pageImgHeight, remainingHeight)) * canvas.width / imgWidth
-            );
-            remainingHeight -= pageImgHeight;
-            sourceY += pageImgHeight;
-            if (remainingHeight > 0) {
-                pdf.addPage();
+        async function exportSchedulePDF() {
+            const exportArea = document.getElementById('schedule-export-area');
+            if (!exportArea) {
+                alert('ไม่พบพื้นที่ส่งออก PDF');
+                return;
             }
+        
+            // แปลง textarea หมายเหตุเป็น div ข้อความชั่วคราว
+            const noteTextarea = document.getElementById('schedule-note');
+            const noteDiv = document.getElementById('schedule-note-text');
+            if (noteTextarea && noteDiv) {
+                noteDiv.textContent = noteTextarea.value;
+                noteDiv.style.display = '';
+                noteTextarea.style.display = 'none';
+            }
+        
+            // แคป div ทั้งก้อน (ตาราง+หมายเหตุ)
+            html2canvas(exportArea, {
+                scale: 1, // ใช้ scale 1 ตามขนาดบนจอจริง
+                useCORS: true,
+                backgroundColor: "#ffffff"
+            }).then(function (canvas) {
+                // คืน textarea กลับเป็นปกติ
+                if (noteTextarea && noteDiv) {
+                    noteDiv.style.display = 'none';
+                    noteTextarea.style.display = '';
+                }
+        
+                // ขนาดจริงของตาราง/หมายเหตุบนเว็บ
+                const imgWidth = canvas.width;
+                const imgHeight = canvas.height;
+        
+                // ขนาดกระดาษ A4 แนวนอน (pt)
+                const pdf = new window.jspdf.jsPDF({
+                    orientation: 'landscape',
+                    unit: 'pt',
+                    format: 'a4'
+                });
+                const pageWidth = pdf.internal.pageSize.getWidth();
+                const pageHeight = pdf.internal.pageSize.getHeight();
+        
+                // หาตำแหน่งจัดกลางหน้ากระดาษ
+                const x = (pageWidth - imgWidth) / 2;
+                const y = (pageHeight - imgHeight) / 2;
+        
+                // ถ้าตารางสูงเกินหน้า A4 ให้ crop
+                let cropCanvas = canvas;
+                if (imgHeight > pageHeight) {
+                    const cropped = document.createElement('canvas');
+                    cropped.width = imgWidth;
+                    cropped.height = pageHeight;
+                    const ctx = cropped.getContext('2d');
+                    ctx.drawImage(canvas, 0, 0, imgWidth, pageHeight, 0, 0, imgWidth, pageHeight);
+                    cropCanvas = cropped;
+                }
+        
+                const imgData = cropCanvas.toDataURL('image/png');
+                // วางภาพลง PDF โดยไม่ขยาย
+                pdf.addImage(imgData, 'PNG', x, y, imgWidth, cropCanvas.height);
+        
+                pdf.save('ตารางเวร.pdf');
+            });
         }
-
-        pdf.save('ตารางเวร.pdf');
-    });
-}
         
         function exportClaim() {
             const month = parseInt(document.getElementById('claim-month').value);
