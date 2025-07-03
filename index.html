@@ -444,6 +444,7 @@ function renderScheduleTable() {
     html += '<tr>';
     for(let j=0; j<currentScheduleData[i].length; j++) {
       let val = currentScheduleData[i][j] || '';
+      // เฉพาะโหมดแก้ไขเท่านั้นที่มี onclick
       if(isScheduleEditing) {
         html += `<td class="schedule-cell editable" onclick="editCell(${i},${j})">${val}</td>`;
       } else {
@@ -457,7 +458,7 @@ function renderScheduleTable() {
 }
 
 function editCell(i, j) {
-  if(!isScheduleEditing) return;
+  if(!isScheduleEditing) return; // ป้องกันการเรียกนอกโหมดแก้ไข
   const newValue = prompt('ระบุเวรใหม่', currentScheduleData[i][j] || '');
   if(newValue !== null) {
     currentScheduleData[i][j] = newValue;
