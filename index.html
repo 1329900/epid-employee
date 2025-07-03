@@ -9,6 +9,9 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <!-- เพิ่มสองบรรทัดนี้ใน <head> -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
     <script type="module">
         import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.7.0/firebase-app.js';
         import { getDatabase, ref, push, set, get, remove, update } from 'https://www.gstatic.com/firebasejs/10.7.0/firebase-database.js';
@@ -281,6 +284,7 @@
                 </div>
                 <div class="flex gap-2 mb-4">
                     <button onclick="exportSchedule()" class="btn-secondary px-4 py-2 rounded-lg">ส่งออก Excel</button>
+                    <button onclick="exportSchedulePDF()" class="btn-secondary px-4 py-2 rounded-lg">ส่งออก PDF</button>
                 </div>
                 <div id="schedule-table" class="overflow-x-auto"></div>
             </div>
@@ -2024,6 +2028,43 @@
             exportToExcel(data, 'ตารางเวร');
         }
 
+        // เพิ่มฟังก์ชันนี้ใน <script>
+async function exportSchedulePDF() {
+    const scheduleTable = document.getElementById('schedule-table');
+    if (!scheduleTable) {
+        alert('ไม่พบตารางเวร');
+        return;
+    }
+    html2canvas(scheduleTable, { scale: 2 }).then(function(canvas) {
+        const imgData = canvas.toDataURL('image/png');
+        const pdf = new window.jspdf.jsPDF({
+            orientation: 'landscape',
+            unit: 'pt',
+            format: 'a4'
+        });
+        const pageWidth = pdf.internal.pageSize.getWidth();
+        const pageHeight = pdf.internal.pageSize.getHeight();
+        const imgWidth = pageWidth - 40;
+        const imgHeight = canvas.height * imgWidth / canvas.width;
+        pdf.addImage(imgData, 'PNG', 20, 20, imgWidth, imgHeight);
+
+        const noteEl = document.getElementById('schedule-note');
+        if (noteEl && noteEl.value.trim()) {
+            let noteY = 40 + imgHeight;
+            if (noteY > pageHeight - 60) {
+                pdf.addPage();
+                noteY = 40;
+            }
+            pdf.setFontSize(14);
+            pdf.text('หมายเหตุ:', 30, noteY);
+            pdf.setFontSize(12);
+            const lines = pdf.splitTextToSize(noteEl.value, pageWidth - 60);
+            pdf.text(lines, 30, noteY + 20);
+        }
+        pdf.save('ตารางเวร.pdf');
+    });
+}
+        
         function exportClaim() {
             const month = parseInt(document.getElementById('claim-month').value);
             const year = parseInt(document.getElementById('claim-year').value);
