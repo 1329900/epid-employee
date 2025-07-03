@@ -2053,21 +2053,21 @@
                 noteTextarea.style.display = 'none';
             }
         
-            // แคป div ทั้งก้อน (ตาราง+หมายเหตุ)
             html2canvas(exportArea, {
-                scale: 1, // ใช้ scale 1 ตามขนาดบนจอจริง
+                scale: 2,
                 useCORS: true,
-                backgroundColor: "#ffffff"
-            }).then(function (canvas) {
+                backgroundColor: "#fff"
+            }).then(function(canvas) {
                 // คืน textarea กลับเป็นปกติ
                 if (noteTextarea && noteDiv) {
                     noteDiv.style.display = 'none';
                     noteTextarea.style.display = '';
                 }
         
-                // ขนาดจริงของตาราง/หมายเหตุบนเว็บ
-                const imgWidth = canvas.width;
-                const imgHeight = canvas.height;
+                const imgData = canvas.toDataURL('image/png');
+                // ขนาดจริงของภาพจากหน้าเว็บ (px)
+                const imgWidthPx = canvas.width;
+                const imgHeightPx = canvas.height;
         
                 // ขนาดกระดาษ A4 แนวนอน (pt)
                 const pdf = new window.jspdf.jsPDF({
@@ -2078,24 +2078,32 @@
                 const pageWidth = pdf.internal.pageSize.getWidth();
                 const pageHeight = pdf.internal.pageSize.getHeight();
         
-                // หาตำแหน่งจัดกลางหน้ากระดาษ
-                const x = (pageWidth - imgWidth) / 2;
-                const y = (pageHeight - imgHeight) / 2;
+                // พิกเซลต่อ pt (มาตรฐาน 96px = 72pt)
+                const pxPerPt = 96 / 72;
         
-                // ถ้าตารางสูงเกินหน้า A4 ให้ crop
-                let cropCanvas = canvas;
-                if (imgHeight > pageHeight) {
-                    const cropped = document.createElement('canvas');
-                    cropped.width = imgWidth;
-                    cropped.height = pageHeight;
-                    const ctx = cropped.getContext('2d');
-                    ctx.drawImage(canvas, 0, 0, imgWidth, pageHeight, 0, 0, imgWidth, pageHeight);
-                    cropCanvas = cropped;
-                }
+                // แปลง pixel เป็น pt
+                const imgWidthPt = imgWidthPx / pxPerPt;
+                const imgHeightPt = imgHeightPx / pxPerPt;
         
-                const imgData = cropCanvas.toDataURL('image/png');
-                // วางภาพลง PDF โดยไม่ขยาย
-                pdf.addImage(imgData, 'PNG', x, y, imgWidth, cropCanvas.height);
+                // คำนวณ scale เพื่อ fit ให้ไม่เกินขนาดกระดาษ
+                const scale = Math.min(pageWidth / imgWidthPt, pageHeight / imgHeightPt);
+        
+                // ขนาดสุดท้ายที่จะใส่ลงใน PDF
+                const renderWidth = imgWidthPt * scale;
+                const renderHeight = imgHeightPt * scale;
+        
+                // จัดกลางหน้ากระดาษ
+                const x = (pageWidth - renderWidth) / 2;
+                const y = (pageHeight - renderHeight) / 2;
+        
+                pdf.addImage(
+                    imgData,
+                    'PNG',
+                    x,
+                    y,
+                    renderWidth,
+                    renderHeight
+                );
         
                 pdf.save('ตารางเวร.pdf');
             });
