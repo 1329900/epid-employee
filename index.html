@@ -2424,45 +2424,6 @@ async function exportSchedulePDF() {
         pdf.save('ตารางเวร.pdf');
     });
 }
-
-function exportSchedulePDF() {
-  // 1. ซ่อนปุ่มแก้ไขและเสร็จสิ้น
-  const editBtn = document.getElementById('edit-schedule-btn');
-  const finishBtn = document.getElementById('finish-schedule-btn');
-  let editBtnDisplay = editBtn ? editBtn.style.display : '';
-  let finishBtnDisplay = finishBtn ? finishBtn.style.display : '';
-  if (editBtn) editBtn.style.display = 'none';
-  if (finishBtn) finishBtn.style.display = 'none';
-
-  // 2. ซ่อน overlay ใสบังตาราง (ถ้ามี)
-  const overlay = document.getElementById('schedule-overlay');
-  let overlayDisplay = overlay ? overlay.style.display : '';
-  if (overlay) overlay.style.display = 'none';
-
-  // 3. กำหนดพื้นที่ export เฉพาะตารางเวรหรือทั้ง schedule-tab ตามต้องการ
-  const exportArea = document.getElementById('schedule-tab');
-  html2canvas(exportArea, {scale: 2}).then(canvas => {
-    // 4. สร้าง PDF
-    const imgData = canvas.toDataURL('image/png');
-    const pdf = new window.jspdf.jsPDF({orientation: 'landscape', unit: 'pt', format: 'a4'});
-    const pageWidth = pdf.internal.pageSize.getWidth();
-    const pageHeight = pdf.internal.pageSize.getHeight();
-    const imgProps = pdf.getImageProperties(imgData);
-    const margin = 20;
-    const pdfWidth = pageWidth - 2 * margin;
-    const pdfHeight = (imgProps.height * pdfWidth) / imgProps.width;
-
-    pdf.addImage(imgData, 'PNG', margin, margin, pdfWidth, pdfHeight);
-    pdf.save('ตารางเวร.pdf');
-
-    // 5. แสดงปุ่มและ overlay กลับมา
-    if (editBtn) editBtn.style.display = editBtnDisplay;
-    if (finishBtn) finishBtn.style.display = finishBtnDisplay;
-    if (overlay) overlay.style.display = overlayDisplay;
-  });
-}
-
-const exportArea = document.getElementById('schedule-table');
         
         // Close popup when clicking outside
         document.addEventListener('click', function(event) {
