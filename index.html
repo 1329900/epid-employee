@@ -286,11 +286,6 @@
                     <button onclick="exportSchedule()" class="btn-secondary px-4 py-2 rounded-lg">ส่งออก Excel</button>
                     <button onclick="exportSchedulePDF()" class="btn-secondary px-4 py-2 rounded-lg">ส่งออก PDF</button>
                 </div>
-<div class="flex justify-end mb-2">
-  <button id="edit-schedule-btn" class="btn-primary px-4 py-2 rounded-lg" onclick="enableScheduleEdit()">แก้ไข</button>
-  <button id="save-schedule-btn" class="btn-secondary px-4 py-2 rounded-lg ml-2 hidden" onclick="saveScheduleEdit()">บันทึก</button>
-  <button id="cancel-schedule-btn" class="btn-secondary px-4 py-2 rounded-lg ml-2 hidden" onclick="cancelScheduleEdit()">ยกเลิก</button>
-</div>
                 <div id="schedule-export-area">
                     <div id="schedule-table" class="overflow-x-auto"></div>
                 </div>
@@ -402,69 +397,7 @@
         let workRecords = {};
         let holidays = {};
         let currentScheduleData = {};
-        
-let isScheduleEditing = false;
-let scheduleTableBackup = null;
 
-function enableScheduleEdit() {
-  isScheduleEditing = true;
-  document.getElementById('edit-schedule-btn').classList.add('hidden');
-  document.getElementById('save-schedule-btn').classList.remove('hidden');
-  document.getElementById('cancel-schedule-btn').classList.remove('hidden');
-  // สำรองข้อมูลตารางเวรปัจจุบันเพื่อ rollback ได้
-  scheduleTableBackup = JSON.stringify(currentScheduleData);
-  renderScheduleTable();
-}
-
-function saveScheduleEdit() {
-  isScheduleEditing = false;
-  document.getElementById('edit-schedule-btn').classList.remove('hidden');
-  document.getElementById('save-schedule-btn').classList.add('hidden');
-  document.getElementById('cancel-schedule-btn').classList.add('hidden');
-  // TODO: บันทึก currentScheduleData ลงฐานข้อมูล/ตัวแปรถาวร
-  renderScheduleTable();
-}
-
-function cancelScheduleEdit() {
-  isScheduleEditing = false;
-  document.getElementById('edit-schedule-btn').classList.remove('hidden');
-  document.getElementById('save-schedule-btn').classList.add('hidden');
-  document.getElementById('cancel-schedule-btn').classList.add('hidden');
-  // Rollback ข้อมูล
-  if(scheduleTableBackup) {
-    currentScheduleData = JSON.parse(scheduleTableBackup);
-  }
-  renderScheduleTable();
-}
-
-function renderScheduleTable() {
-  const tableDiv = document.getElementById('schedule-table');
-  let html = '<table class="w-full border-collapse"><tbody>';
-  for(let i=0; i<currentScheduleData.length; i++) {
-    html += '<tr>';
-    for(let j=0; j<currentScheduleData[i].length; j++) {
-      let val = currentScheduleData[i][j] || '';
-      // เฉพาะโหมดแก้ไขเท่านั้นที่มี onclick
-      if(isScheduleEditing) {
-        html += `<td class="schedule-cell editable" onclick="editCell(${i},${j})">${val}</td>`;
-      } else {
-        html += `<td class="schedule-cell">${val}</td>`;
-      }
-    }
-    html += '</tr>';
-  }
-  html += '</tbody></table>';
-  tableDiv.innerHTML = html;
-}
-
-function editCell(i, j) {
-  if(!isScheduleEditing) return; // ป้องกันการเรียกนอกโหมดแก้ไข
-  const newValue = prompt('ระบุเวรใหม่', currentScheduleData[i][j] || '');
-  if(newValue !== null) {
-    currentScheduleData[i][j] = newValue;
-    renderScheduleTable();
-  }
-}
         // Initialize
         document.addEventListener('DOMContentLoaded', function() {
             try {
