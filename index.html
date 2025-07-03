@@ -2348,13 +2348,11 @@ async function exportSchedulePDF() {
         }
 
         const imgData = canvas.toDataURL('image/png');
-        // ขนาดจริงของภาพจากหน้าเว็บ (px)
         const imgWidthPx = canvas.width;
         const imgHeightPx = canvas.height;
 
-        // กระดาษ A4 แนวนอน: 841.89 x 595.28 pt (1 pt = 1/72 นิ้ว)
-        // Margin 1 ซม. = 28.35 pt
-        const margin = 28.35;
+        // หน่วย pt (A4 landscape: 841.89 x 595.28 pt)
+        const margin = 28.35; // 1 cm
         const pdf = new window.jspdf.jsPDF({
             orientation: 'landscape',
             unit: 'pt',
@@ -2363,31 +2361,32 @@ async function exportSchedulePDF() {
         const pageWidth = pdf.internal.pageSize.getWidth();   // 841.89 pt
         const pageHeight = pdf.internal.pageSize.getHeight(); // 595.28 pt
 
-        // พื้นที่เต็มหน้าหลังหัก margin ซ้าย-ขวา
-        const targetWidth = pageWidth - 2 * margin;
-        // scale ภาพให้พอดีกับหน้ากระดาษ (เต็มกว้าง, สูงตามสัดส่วน)
-        const scale = targetWidth / imgWidthPx;
-        const imgRenderWidth = targetWidth;
-        const imgRenderHeight = imgHeightPx * scale;
+        // พื้นที่สำหรับภาพหลังหัก margin
+        const maxWidth = pageWidth - 2 * margin;
+        const maxHeight = pageHeight - 2 * margin;
 
-        // วางภาพที่ x=margin, y=margin (เหลือขอบ 1 ซม. ทุกด้าน)
-        let y = margin;
-        // ถ้าสูงเกินพื้นที่ ให้ขยับขึ้น (แต่จะ crop ด้านล่าง)
-        if (imgRenderHeight > (pageHeight - 2 * margin)) {
-            // ถ้าต้องการ crop ให้แสดงด้านบนก่อน
-            // ไม่ต้องปรับค่า y (ยังคง y = margin)
-        } else {
-            // ถ้าสูงน้อยกว่าพื้นที่ ให้จัดกลางแนวตั้ง
-            y = margin + ((pageHeight - 2 * margin) - imgRenderHeight) / 2;
-        }
+        // แปลง px → pt (96px = 72pt)
+        const pxPerPt = 96 / 72;
+        const imgWidthPt = imgWidthPx / pxPerPt;
+        const imgHeightPt = imgHeightPx / pxPerPt;
+
+        // scale เพื่อ fit ทั้งแนวกว้างและแนวสูง (สำคัญ!)
+        const scale = Math.min(maxWidth / imgWidthPt, maxHeight / imgHeightPt);
+
+        const renderWidth = imgWidthPt * scale;
+        const renderHeight = imgHeightPt * scale;
+
+        // จัดภาพให้อยู่กลางระหว่าง margin
+        const x = margin + (maxWidth - renderWidth) / 2;
+        const y = margin + (maxHeight - renderHeight) / 2;
 
         pdf.addImage(
             imgData,
             'PNG',
-            margin,
+            x,
             y,
-            imgRenderWidth,
-            imgRenderHeight
+            renderWidth,
+            renderHeight
         );
 
         pdf.save('ตารางเวร.pdf');
