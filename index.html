@@ -2069,7 +2069,7 @@
                 const imgWidthPx = canvas.width;
                 const imgHeightPx = canvas.height;
         
-                // หน่วย pt (1 pt = 1/72 นิ้ว), กระดาษ A4 แนวนอน: 841.89 x 595.28 pt
+                // กระดาษ A4 แนวนอน: 841.89 x 595.28 pt (1 pt = 1/72 นิ้ว)
                 // Margin 1 ซม. = 28.35 pt
                 const margin = 28.35;
                 const pdf = new window.jspdf.jsPDF({
@@ -2080,26 +2080,28 @@
                 const pageWidth = pdf.internal.pageSize.getWidth();   // 841.89 pt
                 const pageHeight = pdf.internal.pageSize.getHeight(); // 595.28 pt
         
-                // พื้นที่วาดภาพจริง (หลังหัก margin)
-                const renderWidth = pageWidth - margin * 2;
-                const renderHeight = pageHeight - margin * 2;
-        
-                // คำนวณ scale เพื่อให้เต็มความกว้าง (และไม่เกินความสูง)
-                const scale = Math.min(
-                    renderWidth / imgWidthPx,
-                    renderHeight / imgHeightPx
-                );
-                const imgRenderWidth = imgWidthPx * scale;
+                // พื้นที่เต็มหน้าหลังหัก margin ซ้าย-ขวา
+                const targetWidth = pageWidth - 2 * margin;
+                // scale ภาพให้พอดีกับหน้ากระดาษ (เต็มกว้าง, สูงตามสัดส่วน)
+                const scale = targetWidth / imgWidthPx;
+                const imgRenderWidth = targetWidth;
                 const imgRenderHeight = imgHeightPx * scale;
         
-                // จัดตำแหน่งให้อยู่ตรงกลางระหว่าง margin
-                const x = margin + (renderWidth - imgRenderWidth) / 2;
-                const y = margin + (renderHeight - imgRenderHeight) / 2;
+                // วางภาพที่ x=margin, y=margin (เหลือขอบ 1 ซม. ทุกด้าน)
+                let y = margin;
+                // ถ้าสูงเกินพื้นที่ ให้ขยับขึ้น (แต่จะ crop ด้านล่าง)
+                if (imgRenderHeight > (pageHeight - 2 * margin)) {
+                    // ถ้าต้องการ crop ให้แสดงด้านบนก่อน
+                    // ไม่ต้องปรับค่า y (ยังคง y = margin)
+                } else {
+                    // ถ้าสูงน้อยกว่าพื้นที่ ให้จัดกลางแนวตั้ง
+                    y = margin + ((pageHeight - 2 * margin) - imgRenderHeight) / 2;
+                }
         
                 pdf.addImage(
                     imgData,
                     'PNG',
-                    x,
+                    margin,
                     y,
                     imgRenderWidth,
                     imgRenderHeight
