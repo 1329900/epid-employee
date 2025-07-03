@@ -2385,9 +2385,8 @@ function exportSchedulePDF() {
     pdfOverlay.style.fontWeight = 'bold';
     pdfOverlay.style.color = '#047857';
     pdfOverlay.style.pointerEvents = 'none';
-    // แทรก overlay ใน div ที่ wrap ตาราง
-    const scheduleTableDiv = document.getElementById('schedule-table');
     // สร้าง container ตำแหน่ง relative ถ้ายังไม่มี
+    const scheduleTableDiv = document.getElementById('schedule-table');
     if (scheduleTableDiv && scheduleTableDiv.parentElement) {
       scheduleTableDiv.parentElement.style.position = 'relative';
       scheduleTableDiv.parentElement.appendChild(pdfOverlay);
@@ -2408,15 +2407,19 @@ function exportSchedulePDF() {
   // 2. Export เฉพาะ div ตาราง
   const exportArea = document.getElementById('schedule-table');
   html2canvas(exportArea, {scale: 2}).then(canvas => {
+    // ขนาด canvas จริง (pixel)
     const imgData = canvas.toDataURL('image/png');
-    const pdf = new window.jspdf.jsPDF({orientation: 'landscape', unit: 'pt', format: 'a4'});
-    const pageWidth = pdf.internal.pageSize.getWidth();
-    const margin = 20;
-    const pdfWidth = pageWidth - 2 * margin;
-    const imgProps = pdf.getImageProperties(imgData);
-    const pdfHeight = (imgProps.height * pdfWidth) / imgProps.width;
+    const pdfWidth = canvas.width;
+    const pdfHeight = canvas.height;
 
-    pdf.addImage(imgData, 'PNG', margin, margin, pdfWidth, pdfHeight);
+    // ขนาด PDF เท่ากับขนาดตารางจริง (pixel)
+    const pdf = new window.jspdf.jsPDF({
+      orientation: pdfWidth > pdfHeight ? 'landscape' : 'portrait',
+      unit: 'px',
+      format: [pdfWidth, pdfHeight]
+    });
+
+    pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, pdfHeight);
     pdf.save('ตารางเวร.pdf');
 
     // 3. ซ่อน overlay ข้อความวันเวลา
