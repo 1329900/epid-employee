@@ -2363,42 +2363,35 @@ document.addEventListener('DOMContentLoaded', () => {
             document.getElementById('claim-popup').classList.add('hidden');
         }
 
-
-
         
 function exportSchedulePDF() {
-  // 1. ซ่อนปุ่มแก้ไข/เสร็จสิ้น ไม่ให้ติดใน PDF
-  const editBtn = document.getElementById('edit-schedule-btn');
-  const finishBtn = document.getElementById('finish-schedule-btn');
-  let editBtnDisplay = editBtn ? editBtn.style.display : '';
-  let finishBtnDisplay = finishBtn ? finishBtn.style.display : '';
-  if (editBtn) editBtn.style.display = 'none';
-  if (finishBtn) finishBtn.style.display = 'none';
-
-  // 2. แสดง overlay สีขาวทึบบังตำแหน่งปุ่มแก้ไข พร้อมข้อความวันที่
-  // หากยังไม่มี overlay ให้สร้าง overlay ใหม่
-  let pdfOverlay = document.getElementById('pdf-export-overlay');
+  // 1. สร้าง overlay สำหรับวันที่ ถ้ายังไม่มี
+  let pdfOverlay = document.getElementById('pdf-export-table-overlay');
   if (!pdfOverlay) {
     pdfOverlay = document.createElement('div');
-    pdfOverlay.id = 'pdf-export-overlay';
+    pdfOverlay.id = 'pdf-export-table-overlay';
     pdfOverlay.style.position = 'absolute';
     pdfOverlay.style.top = '0';
     pdfOverlay.style.left = '0';
     pdfOverlay.style.width = '100%';
-    pdfOverlay.style.height = '56px'; // ปรับความสูงให้ตรงกับแถบปุ่ม
-    pdfOverlay.style.background = 'rgba(255,255,255,0.97)';
-    pdfOverlay.style.zIndex = '50';
+    pdfOverlay.style.height = '40px';
+    pdfOverlay.style.background = 'rgba(255,255,255,0.98)';
+    pdfOverlay.style.zIndex = '100';
     pdfOverlay.style.display = 'flex';
     pdfOverlay.style.alignItems = 'center';
     pdfOverlay.style.justifyContent = 'flex-end';
-    pdfOverlay.style.paddingRight = '28px';
+    pdfOverlay.style.paddingRight = '16px';
     pdfOverlay.style.fontSize = '1rem';
     pdfOverlay.style.fontWeight = 'bold';
     pdfOverlay.style.color = '#047857';
     pdfOverlay.style.pointerEvents = 'none';
-    // แทรก overlay ใน card ตารางเวร
-    const scheduleCard = document.querySelector('#schedule-tab > .card');
-    if (scheduleCard) scheduleCard.insertBefore(pdfOverlay, scheduleCard.children[4]);
+    // แทรก overlay ใน div ที่ wrap ตาราง
+    const scheduleTableDiv = document.getElementById('schedule-table');
+    // สร้าง container ตำแหน่ง relative ถ้ายังไม่มี
+    if (scheduleTableDiv && scheduleTableDiv.parentElement) {
+      scheduleTableDiv.parentElement.style.position = 'relative';
+      scheduleTableDiv.parentElement.appendChild(pdfOverlay);
+    }
   }
 
   // ตั้งข้อความวันที่บันทึก PDF
@@ -2412,31 +2405,22 @@ function exportSchedulePDF() {
   pdfOverlay.textContent = dateText;
   pdfOverlay.style.display = 'flex';
 
-  // 3. ถ้ามี overlay ใสบังตารางอื่น ให้ซ่อนด้วย
-  const overlay = document.getElementById('schedule-overlay');
-  let overlayDisplay = overlay ? overlay.style.display : '';
-  if (overlay) overlay.style.display = 'none';
-
-  // 4. Export
-  const exportArea = document.getElementById('schedule-tab');
+  // 2. Export เฉพาะ div ตาราง
+  const exportArea = document.getElementById('schedule-table');
   html2canvas(exportArea, {scale: 2}).then(canvas => {
     const imgData = canvas.toDataURL('image/png');
     const pdf = new window.jspdf.jsPDF({orientation: 'landscape', unit: 'pt', format: 'a4'});
     const pageWidth = pdf.internal.pageSize.getWidth();
-    const pageHeight = pdf.internal.pageSize.getHeight();
-    const imgProps = pdf.getImageProperties(imgData);
     const margin = 20;
     const pdfWidth = pageWidth - 2 * margin;
+    const imgProps = pdf.getImageProperties(imgData);
     const pdfHeight = (imgProps.height * pdfWidth) / imgProps.width;
 
     pdf.addImage(imgData, 'PNG', margin, margin, pdfWidth, pdfHeight);
     pdf.save('ตารางเวร.pdf');
 
-    // 5. แสดงปุ่มและ overlay กลับมา
-    if (editBtn) editBtn.style.display = editBtnDisplay;
-    if (finishBtn) finishBtn.style.display = finishBtnDisplay;
-    if (overlay) overlay.style.display = overlayDisplay;
-    pdfOverlay.style.display = 'none'; // ซ่อน overlay ข้อความวันเวลา
+    // 3. ซ่อน overlay ข้อความวันเวลา
+    pdfOverlay.style.display = 'none';
   });
 }
         
