@@ -288,11 +288,6 @@
                 </div>
                 <div id="schedule-export-area">
                     <div id="schedule-table" class="overflow-x-auto"></div>
-                    <div class="mt-4">
-                        <label for="schedule-note" class="block text-sm font-medium mb-2">หมายเหตุ</label>
-                        <textarea id="schedule-note" class="input-field w-full" rows="2" placeholder="หมายเหตุสำหรับตารางเวร..."></textarea>
-                        <div id="schedule-note-text" style="display: none;" class="input-field w-full mt-2"></div>
-                    </div>
                 </div>
                 <div id="schedule-table" class="overflow-x-auto"></div>
             </div>
@@ -2327,25 +2322,11 @@ async function exportSchedulePDF() {
         return;
     }
 
-    // แปลง textarea หมายเหตุเป็น div ข้อความชั่วคราว
-    const noteTextarea = document.getElementById('schedule-note');
-    const noteDiv = document.getElementById('schedule-note-text');
-    if (noteTextarea && noteDiv) {
-        noteDiv.textContent = noteTextarea.value;
-        noteDiv.style.display = '';
-        noteTextarea.style.display = 'none';
-    }
-
     html2canvas(exportArea, {
         scale: 2,
         useCORS: true,
         backgroundColor: "#fff"
     }).then(function(canvas) {
-        // คืน textarea กลับเป็นปกติ
-        if (noteTextarea && noteDiv) {
-            noteDiv.style.display = 'none';
-            noteTextarea.style.display = '';
-        }
 
         const imgData = canvas.toDataURL('image/png');
         const imgWidthPx = canvas.width;
