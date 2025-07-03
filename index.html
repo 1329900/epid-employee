@@ -286,13 +286,13 @@
                     <button onclick="exportSchedule()" class="btn-secondary px-4 py-2 rounded-lg">ส่งออก Excel</button>
                     <button onclick="exportSchedulePDF()" class="btn-secondary px-4 py-2 rounded-lg">ส่งออก PDF</button>
                 </div>
-                <div id="schedule-export-area" style="display:flex; gap:32px; align-items: flex-start;">
-                  <div id="schedule-table" style="flex: 0 0 65%; max-width:65%;"></div>
-                  <div style="flex: 1; min-width:180px;">
-                    <label for="schedule-note" class="block text-sm font-medium mb-2">หมายเหตุ</label>
-                    <textarea id="schedule-note" class="input-field w-full" rows="10" placeholder="หมายเหตุสำหรับตารางเวร..."></textarea>
-                    <div id="schedule-note-text" style="display:none;" class="input-field w-full mt-2"></div>
-                  </div>
+                <div id="schedule-export-area">
+                    <div id="schedule-table" class="overflow-x-auto"></div>
+                    <div class="mt-4">
+                        <label for="schedule-note" class="block text-sm font-medium mb-2">หมายเหตุ</label>
+                        <textarea id="schedule-note" class="input-field w-full" rows="2" placeholder="หมายเหตุสำหรับตารางเวร..."></textarea>
+                        <div id="schedule-note-text" style="display: none;" class="input-field w-full mt-2"></div>
+                    </div>
                 </div>
                 <div id="schedule-table" class="overflow-x-auto"></div>
             </div>
@@ -2320,12 +2320,14 @@
 
 
         
-        async function exportSchedulePDF() {
+async function exportSchedulePDF() {
     const exportArea = document.getElementById('schedule-export-area');
     if (!exportArea) {
         alert('ไม่พบพื้นที่ส่งออก PDF');
         return;
     }
+
+    // แปลง textarea หมายเหตุเป็น div ข้อความชั่วคราว
     const noteTextarea = document.getElementById('schedule-note');
     const noteDiv = document.getElementById('schedule-note-text');
     if (noteTextarea && noteDiv) {
@@ -2333,55 +2335,61 @@
         noteDiv.style.display = '';
         noteTextarea.style.display = 'none';
     }
+
     html2canvas(exportArea, {
         scale: 2,
         useCORS: true,
         backgroundColor: "#fff"
     }).then(function(canvas) {
+        // คืน textarea กลับเป็นปกติ
         if (noteTextarea && noteDiv) {
             noteDiv.style.display = 'none';
             noteTextarea.style.display = '';
         }
+
         const imgData = canvas.toDataURL('image/png');
-        // หน่วย pt (A4 landscape: 841.89 x 595.28 pt)
-        const margin = 28.35; // 1 cm
+        // ขนาดจริงของภาพจากหน้าเว็บ (px)
+        const imgWidthPx = canvas.width;
+        const imgHeightPx = canvas.height;
+
+        // กระดาษ A4 แนวนอน: 841.89 x 595.28 pt (1 pt = 1/72 นิ้ว)
+        // Margin 1 ซม. = 28.35 pt
+        const margin = 28.35;
         const pdf = new window.jspdf.jsPDF({
             orientation: 'landscape',
             unit: 'pt',
             format: 'a4'
         });
-        const pageWidth = pdf.internal.pageSize.getWidth();
-        const pageHeight = pdf.internal.pageSize.getHeight();
-        // พื้นที่สำหรับภาพ
-        const renderWidth = pageWidth - 2 * margin;
-        const renderHeight = pageHeight - 2 * margin;
+        const pageWidth = pdf.internal.pageSize.getWidth();   // 841.89 pt
+        const pageHeight = pdf.internal.pageSize.getHeight(); // 595.28 pt
 
-        // ขนาดภาพบน canvas (px)
-        const imgWidthPx = canvas.width;
-        const imgHeightPx = canvas.height;
+        // พื้นที่เต็มหน้าหลังหัก margin ซ้าย-ขวา
+        const targetWidth = pageWidth - 2 * margin;
+        // scale ภาพให้พอดีกับหน้ากระดาษ (เต็มกว้าง, สูงตามสัดส่วน)
+        const scale = targetWidth / imgWidthPx;
+        const imgRenderWidth = targetWidth;
+        const imgRenderHeight = imgHeightPx * scale;
 
-        // แปลง px → pt (96px = 72pt)
-        const pxPerPt = 96 / 72;
-        const imgWidthPt = imgWidthPx / pxPerPt;
-        const imgHeightPt = imgHeightPx / pxPerPt;
-
-        // scale เพื่อ fit พอดีกับกระดาษ
-        const scale = Math.min(renderWidth / imgWidthPt, renderHeight / imgHeightPt);
-        const imgRenderWidth = imgWidthPt * scale;
-        const imgRenderHeight = imgHeightPt * scale;
-
-        // จัดกลาง
-        const x = margin + (renderWidth - imgRenderWidth) / 2;
-        const y = margin + (renderHeight - imgRenderHeight) / 2;
+        // วางภาพที่ x=margin, y=margin (เหลือขอบ 1 ซม. ทุกด้าน)
+        let y = margin;
+        // ถ้าสูงเกินพื้นที่ ให้ขยับขึ้น (แต่จะ crop ด้านล่าง)
+        if (imgRenderHeight > (pageHeight - 2 * margin)) {
+            // ถ้าต้องการ crop ให้แสดงด้านบนก่อน
+            // ไม่ต้องปรับค่า y (ยังคง y = margin)
+        } else {
+            // ถ้าสูงน้อยกว่าพื้นที่ ให้จัดกลางแนวตั้ง
+            y = margin + ((pageHeight - 2 * margin) - imgRenderHeight) / 2;
+        }
 
         pdf.addImage(
             imgData,
             'PNG',
-            x,
+            margin,
             y,
             imgRenderWidth,
             imgRenderHeight
         );
+
         pdf.save('ตารางเวร.pdf');
     });
 }
