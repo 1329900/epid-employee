@@ -286,6 +286,13 @@
                     <button onclick="exportSchedule()" class="btn-secondary px-4 py-2 rounded-lg">ส่งออก Excel</button>
                     <button onclick="exportSchedulePDF()" class="btn-secondary px-4 py-2 rounded-lg">ส่งออก PDF</button>
                 </div>
+                <div id="schedule-export-area">
+                    <div id="schedule-table" class="overflow-x-auto"></div>
+                    <div class="mt-4">
+                        <label for="schedule-note" class="block text-sm font-medium mb-2">หมายเหตุ</label>
+                        <textarea id="schedule-note" class="input-field w-full" rows="2" placeholder="หมายเหตุสำหรับตารางเวร..."></textarea>
+                    </div>
+                </div>
                 <div id="schedule-table" class="overflow-x-auto"></div>
             </div>
         </div>
@@ -2030,37 +2037,78 @@
 
         // เพิ่มฟังก์ชันนี้ใน <script>
 async function exportSchedulePDF() {
-    const scheduleTable = document.getElementById('schedule-table');
-    if (!scheduleTable) {
-        alert('ไม่พบตารางเวร');
+    const exportArea = document.getElementById('schedule-export-area');
+    if (!exportArea) {
+        alert('ไม่พบพื้นที่ส่งออก PDF');
         return;
     }
-    html2canvas(scheduleTable, { scale: 2 }).then(function(canvas) {
+
+    // ถ้าหมายเหตุเป็น textarea ให้แปลงเป็น div ชั่วคราวก่อนแคป (เพื่อให้ PDF เป็นข้อความ ไม่ใช่กล่อง input)
+    const noteTextarea = document.getElementById('schedule-note');
+    let noteValue = "";
+    let noteDiv;
+    if (noteTextarea && noteTextarea.tagName.toLowerCase() === 'textarea') {
+        noteValue = noteTextarea.value;
+        noteDiv = document.createElement('div');
+        noteDiv.className = noteTextarea.className;
+        noteDiv.style.minHeight = noteTextarea.offsetHeight + 'px';
+        noteDiv.style.border = noteTextarea.style.border;
+        noteDiv.textContent = noteValue;
+        noteDiv.id = 'schedule-note-temp';
+        noteTextarea.parentNode.insertBefore(noteDiv, noteTextarea);
+        noteTextarea.style.display = 'none';
+    }
+
+    // แคป div ทั้งก้อน
+    html2canvas(exportArea, { scale: 2 }).then(function(canvas) {
+        // คืนค่า textarea
+        if (noteTextarea) {
+            noteTextarea.style.display = '';
+            if (noteDiv) noteDiv.remove();
+        }
+
         const imgData = canvas.toDataURL('image/png');
         const pdf = new window.jspdf.jsPDF({
             orientation: 'landscape',
             unit: 'pt',
             format: 'a4'
         });
+
         const pageWidth = pdf.internal.pageSize.getWidth();
         const pageHeight = pdf.internal.pageSize.getHeight();
+
+        // ปรับขนาดภาพให้เต็ม width และกระจายหลายหน้า (ถ้าสูงเกิน 1 page)
         const imgWidth = pageWidth - 40;
         const imgHeight = canvas.height * imgWidth / canvas.width;
-        pdf.addImage(imgData, 'PNG', 20, 20, imgWidth, imgHeight);
 
-        const noteEl = document.getElementById('schedule-note');
-        if (noteEl && noteEl.value.trim()) {
-            let noteY = 40 + imgHeight;
-            if (noteY > pageHeight - 60) {
+        let position = 20;
+        let remainingHeight = imgHeight;
+        let imgY = 20;
+        let sourceY = 0;
+        let pageImgHeight = pageHeight - 40;
+
+        while (remainingHeight > 0) {
+            pdf.addImage(
+                imgData,
+                'PNG',
+                20,
+                imgY,
+                imgWidth,
+                Math.min(pageImgHeight, remainingHeight),
+                undefined,
+                'FAST',
+                0,
+                sourceY * canvas.width / imgHeight,
+                0,
+                (Math.min(pageImgHeight, remainingHeight)) * canvas.width / imgWidth
+            );
+            remainingHeight -= pageImgHeight;
+            sourceY += pageImgHeight;
+            if (remainingHeight > 0) {
                 pdf.addPage();
-                noteY = 40;
             }
-            pdf.setFontSize(14);
-            pdf.text('หมายเหตุ:', 30, noteY);
-            pdf.setFontSize(12);
-            const lines = pdf.splitTextToSize(noteEl.value, pageWidth - 60);
-            pdf.text(lines, 30, noteY + 20);
         }
+
         pdf.save('ตารางเวร.pdf');
     });
 }
