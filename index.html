@@ -2037,79 +2037,79 @@
         }
 
         // เพิ่มฟังก์ชันนี้ใน <script>
-        async function exportSchedulePDF() {
-            const exportArea = document.getElementById('schedule-export-area');
-            if (!exportArea) {
-                alert('ไม่พบพื้นที่ส่งออก PDF');
-                return;
-            }
-        
-            // แปลง textarea หมายเหตุเป็น div ข้อความชั่วคราว
-            const noteTextarea = document.getElementById('schedule-note');
-            const noteDiv = document.getElementById('schedule-note-text');
-            if (noteTextarea && noteDiv) {
-                noteDiv.textContent = noteTextarea.value;
-                noteDiv.style.display = '';
-                noteTextarea.style.display = 'none';
-            }
-        
-            html2canvas(exportArea, {
-                scale: 2,
-                useCORS: true,
-                backgroundColor: "#fff"
-            }).then(function(canvas) {
-                // คืน textarea กลับเป็นปกติ
-                if (noteTextarea && noteDiv) {
-                    noteDiv.style.display = 'none';
-                    noteTextarea.style.display = '';
-                }
-        
-                const imgData = canvas.toDataURL('image/png');
-                // ขนาดจริงของภาพจากหน้าเว็บ (px)
-                const imgWidthPx = canvas.width;
-                const imgHeightPx = canvas.height;
-        
-                // กระดาษ A4 แนวนอน: 841.89 x 595.28 pt (1 pt = 1/72 นิ้ว)
-                // Margin 1 ซม. = 28.35 pt
-                const margin = 28.35;
-                const pdf = new window.jspdf.jsPDF({
-                    orientation: 'landscape',
-                    unit: 'pt',
-                    format: 'a4'
-                });
-                const pageWidth = pdf.internal.pageSize.getWidth();   // 841.89 pt
-                const pageHeight = pdf.internal.pageSize.getHeight(); // 595.28 pt
-        
-                // พื้นที่เต็มหน้าหลังหัก margin ซ้าย-ขวา
-                const targetWidth = pageWidth - 2 * margin;
-                // scale ภาพให้พอดีกับหน้ากระดาษ (เต็มกว้าง, สูงตามสัดส่วน)
-                const scale = targetWidth / imgWidthPx;
-                const imgRenderWidth = targetWidth;
-                const imgRenderHeight = imgHeightPx * scale;
-        
-                // วางภาพที่ x=margin, y=margin (เหลือขอบ 1 ซม. ทุกด้าน)
-                let y = margin;
-                // ถ้าสูงเกินพื้นที่ ให้ขยับขึ้น (แต่จะ crop ด้านล่าง)
-                if (imgRenderHeight > (pageHeight - 2 * margin)) {
-                    // ถ้าต้องการ crop ให้แสดงด้านบนก่อน
-                    // ไม่ต้องปรับค่า y (ยังคง y = margin)
-                } else {
-                    // ถ้าสูงน้อยกว่าพื้นที่ ให้จัดกลางแนวตั้ง
-                    y = margin + ((pageHeight - 2 * margin) - imgRenderHeight) / 2;
-                }
-        
-                pdf.addImage(
-                    imgData,
-                    'PNG',
-                    margin,
-                    y,
-                    imgRenderWidth,
-                    imgRenderHeight
-                );
-        
-                pdf.save('ตารางเวร.pdf');
-            });
+async function exportSchedulePDF() {
+    const exportArea = document.getElementById('schedule-export-area');
+    if (!exportArea) {
+        alert('ไม่พบพื้นที่ส่งออก PDF');
+        return;
+    }
+
+    // แปลง textarea หมายเหตุเป็น div ข้อความชั่วคราว
+    const noteTextarea = document.getElementById('schedule-note');
+    const noteDiv = document.getElementById('schedule-note-text');
+    if (noteTextarea && noteDiv) {
+        noteDiv.textContent = noteTextarea.value;
+        noteDiv.style.display = '';
+        noteTextarea.style.display = 'none';
+    }
+
+    html2canvas(exportArea, {
+        scale: 2,
+        useCORS: true,
+        backgroundColor: "#fff"
+    }).then(function(canvas) {
+        // คืน textarea กลับเป็นปกติ
+        if (noteTextarea && noteDiv) {
+            noteDiv.style.display = 'none';
+            noteTextarea.style.display = '';
         }
+
+        const imgData = canvas.toDataURL('image/png');
+        // ขนาดจริงของภาพจากหน้าเว็บ (px)
+        const imgWidthPx = canvas.width;
+        const imgHeightPx = canvas.height;
+
+        // กระดาษ A4 แนวนอน: 841.89 x 595.28 pt (1 pt = 1/72 นิ้ว)
+        // Margin 1 ซม. = 28.35 pt
+        const margin = 28.35;
+        const pdf = new window.jspdf.jsPDF({
+            orientation: 'landscape',
+            unit: 'pt',
+            format: 'a4'
+        });
+        const pageWidth = pdf.internal.pageSize.getWidth();   // 841.89 pt
+        const pageHeight = pdf.internal.pageSize.getHeight(); // 595.28 pt
+
+        // พื้นที่เต็มหน้าหลังหัก margin ซ้าย-ขวา
+        const targetWidth = pageWidth - 2 * margin;
+        // scale ภาพให้พอดีกับหน้ากระดาษ (เต็มกว้าง, สูงตามสัดส่วน)
+        const scale = targetWidth / imgWidthPx;
+        const imgRenderWidth = targetWidth;
+        const imgRenderHeight = imgHeightPx * scale;
+
+        // วางภาพที่ x=margin, y=margin (เหลือขอบ 1 ซม. ทุกด้าน)
+        let y = margin;
+        // ถ้าสูงเกินพื้นที่ ให้ขยับขึ้น (แต่จะ crop ด้านล่าง)
+        if (imgRenderHeight > (pageHeight - 2 * margin)) {
+            // ถ้าต้องการ crop ให้แสดงด้านบนก่อน
+            // ไม่ต้องปรับค่า y (ยังคง y = margin)
+        } else {
+            // ถ้าสูงน้อยกว่าพื้นที่ ให้จัดกลางแนวตั้ง
+            y = margin + ((pageHeight - 2 * margin) - imgRenderHeight) / 2;
+        }
+
+        pdf.addImage(
+            imgData,
+            'PNG',
+            margin,
+            y,
+            imgRenderWidth,
+            imgRenderHeight
+        );
+
+        pdf.save('ตารางเวร.pdf');
+    });
+}
         
         function exportClaim() {
             const month = parseInt(document.getElementById('claim-month').value);
