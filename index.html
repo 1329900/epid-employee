@@ -287,7 +287,25 @@
                     <button onclick="exportSchedulePDF()" class="btn-secondary px-4 py-2 rounded-lg">ส่งออก PDF</button>
                 </div>
                 <div id="schedule-export-area">
-                    <div id="schedule-table" class="overflow-x-auto"></div>
+
+<div class="flex justify-end mb-2">
+  <button id="edit-schedule-btn" class="btn-primary px-4 py-2 rounded-lg" onclick="enableScheduleEdit()">แก้ไข</button>
+  <button id="finish-schedule-btn" class="btn-secondary px-4 py-2 rounded-lg ml-2 hidden" onclick="finishScheduleEdit()">เสร็จสิ้น</button>
+</div>
+                    
+<div class="relative" style="min-height: 120px;">
+  <div id="schedule-table" class="overflow-x-auto"></div>
+  <div id="schedule-overlay"
+       style="
+         position:absolute;
+         top:0; left:0; right:0; bottom:0;
+         background:rgba(255,255,255,0.01);
+         z-index:20;
+         cursor: not-allowed;
+         pointer-events:all;
+         "
+  ></div>
+</div>
                 </div>
                 <div id="schedule-table" class="overflow-x-auto"></div>
             </div>
@@ -398,6 +416,39 @@
         let holidays = {};
         let currentScheduleData = {};
 
+let isScheduleEditing = false;
+
+function showScheduleOverlay(show) {
+  const overlay = document.getElementById('schedule-overlay');
+  if(overlay) overlay.style.display = show ? 'block' : 'none';
+}
+
+function enableScheduleEdit() {
+  isScheduleEditing = true;
+  document.getElementById('edit-schedule-btn').classList.add('hidden');
+  document.getElementById('finish-schedule-btn').classList.remove('hidden');
+  showScheduleOverlay(false); // เอาวัตถุใสออก
+}
+
+function finishScheduleEdit() {
+  isScheduleEditing = false;
+  document.getElementById('edit-schedule-btn').classList.remove('hidden');
+  document.getElementById('finish-schedule-btn').classList.add('hidden');
+  showScheduleOverlay(true); // กลับมาบังใหม่
+  // (คุณอาจบันทึกข้อมูลที่เปลี่ยนแปลงตรงนี้)
+}
+
+// เรียกใช้งาน overlay หลังจากวาดตารางทุกครั้ง!
+function renderScheduleTable() {
+  // ... วาดตารางเวรตามปกติ ...
+  showScheduleOverlay(!isScheduleEditing);
+}
+
+// ให้ overlay โชว์เริ่มต้นทันทีที่โหลดเสร็จ
+document.addEventListener('DOMContentLoaded', () => {
+  showScheduleOverlay(true);
+});
+    
         // Initialize
         document.addEventListener('DOMContentLoaded', function() {
             try {
