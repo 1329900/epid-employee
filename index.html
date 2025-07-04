@@ -45,6 +45,14 @@
             window.firebaseReady = false;
         }
     </script>
+<style>
+.reserved-claim-cell {
+  background-color: #bbf7d0 !important; /* tailwind green-200 */
+  color: #065f46 !important;
+  font-weight: bold;
+  font-size: 1.2rem;
+}
+</style>
     <style>
         body { font-family: 'Prompt', sans-serif; }
         .tab-active { background-color: #065f46; color: white; }
@@ -411,6 +419,7 @@
 
     <script>
         // Global variables
+        let reservedClaims = {};
         let employees = {};
         let tasks = {};
         let workRecords = {};
@@ -1648,6 +1657,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
         // Claim table management
         async function generateClaimTable() {
+          await loadReservedClaims();
             try {
                 const monthElement = document.getElementById('claim-month');
                 const yearElement = document.getElementById('claim-year');
@@ -1686,14 +1696,17 @@ document.addEventListener('DOMContentLoaded', () => {
                     const date = new Date(year, month - 1, day);
                     const dayName = ['อา', 'จ', 'อ', 'พ', 'พฤ', 'ศ', 'ส'][date.getDay()];
                     const dateStr = `${year}-${month.toString().padStart(2, '0')}-${day.toString().padStart(2, '0')}`;
+                    const key = `${empId}_${dateStr}`;
                     const dayOfWeek = date.getDay();
                     
                     let headerClass = 'border border-gray-300 p-1 text-xs';
                     if ((holidays && holidays[dateStr]) || dayOfWeek === 0 || dayOfWeek === 6) {
                         headerClass += ' weekend-header';
+                    if (reservedClaims[key]) {
+                        cellClass += ' reserved-claim-cell';
+                        cellContent = '✓';
                     }
-                    
-                    html += `<th class="${headerClass}">${day}<br>${dayName}</th>`;
+                    html += `<td class="${cellClass} claim-cell" onclick="showReserveClaimPopup('${empId}', '${dateStr}', ${day})">${cellContent}</td>`;
                 }
                 html += '<th class="border border-gray-300 p-2">รวม</th>';
                 html += '</tr></thead>';
@@ -2426,6 +2439,65 @@ function exportSchedulePDF() {
     // 3. ซ่อน overlay ข้อความวันเวลา
     pdfOverlay.style.display = 'none';
   });
+}
+
+// 1. โหลดข้อมูล reservedClaims จาก Firebase
+async function loadReservedClaims() {
+  try {
+    if (window.db && window.dbGet && window.dbRef && window.firebaseReady) {
+      const snapshot = await window.dbGet(window.dbRef(window.db, 'reservedClaims'));
+      reservedClaims = snapshot.val() || {};
+    } else {
+      reservedClaims = {};
+    }
+  } catch (error) {
+    reservedClaims = {};
+  }
+}
+
+// 2. save reserved claim
+async function saveReservedClaim(empId, date, note = "") {
+  const key = `${empId}_${date}`;
+  await window.dbSet(window.dbRef(window.db, `reservedClaims/${key}`), {
+    employeeId: empId,
+    date: date,
+    reservedAt: Date.now(),
+    note: note,
+  });
+  reservedClaims[key] = { employeeId: empId, date, reservedAt: Date.now(), note };
+}
+
+// 3. remove reserved claim
+async function removeReservedClaim(empId, date) {
+  const key = `${empId}_${date}`;
+  await window.dbRemove(window.dbRef(window.db, `reservedClaims/${key}`));
+  delete reservedClaims[key];
+}
+
+// 4. popup สำหรับจอง/แก้ไข/ยกเลิก
+function showReserveClaimPopup(empId, date, day) {
+  const key = `${empId}_${date}`;
+  const emp = employees[empId];
+  const reserved = reservedClaims[key];
+  let note = reserved?.note || "";
+
+  // Simple popup (prompt), สามารถเปลี่ยนเป็น modal ที่สวยกว่านี้ได้
+  let msg = `พนักงาน: ${emp?.firstname} ${emp?.lastname}\nวันที่: ${date}\nหมายเหตุ:`;
+  if (reserved) {
+    // แก้ไข/ลบ
+    const newNote = prompt(`${msg}\n\n* แก้ไขหมายเหตุ (ว่างเพื่อลบ):`, note);
+    if (newNote === null) return; // user cancel
+    if (newNote === '' && confirm('ต้องการลบการจองใช่หรือไม่?')) {
+      removeReservedClaim(empId, date).then(() => generateClaimTable());
+    } else if (newNote !== note) {
+      saveReservedClaim(empId, date, newNote).then(() => generateClaimTable());
+    }
+  } else {
+    // จองใหม่
+    const newNote = prompt(`${msg}\n\n* เพิ่มหมายเหตุได้ (ไม่บังคับ):`, "");
+    if (newNote === null) return;
+    saveReservedClaim(empId, date, newNote).then(() => generateClaimTable());
+  }
 }
         
         // Close popup when clicking outside
