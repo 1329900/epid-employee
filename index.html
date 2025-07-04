@@ -312,40 +312,79 @@
             </div>
         </div>
 
-        <!-- Claim Tab -->
-        <div id="claim-tab" class="tab-content hidden">
-            <div class="card p-6 mb-6">
-                <h2 class="text-xl font-bold text-emerald-800 mb-4">ตารางเบิก</h2>
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-                    <div>
-                        <label class="block text-sm font-medium mb-2">เดือน</label>
-                        <select id="claim-month" class="input-field w-full">
-                            <option value="1">มกราคม</option>
-                            <option value="2">กุมภาพันธ์</option>
-                            <option value="3">มีนาคม</option>
-                            <option value="4">เมษายน</option>
-                            <option value="5">พฤษภาคม</option>
-                            <option value="6">มิถุนายน</option>
-                            <option value="7">กรกฎาคม</option>
-                            <option value="8">สิงหาคม</option>
-                            <option value="9">กันยายน</option>
-                            <option value="10">ตุลาคม</option>
-                            <option value="11">พฤศจิกายน</option>
-                            <option value="12">ธันวาคม</option>
-                        </select>
-                    </div>
-                    <div>
-                        <label class="block text-sm font-medium mb-2">ปี</label>
-                        <input type="number" id="claim-year" class="input-field w-full" value="2024" min="2020" max="2030">
-                    </div>
-                </div>
-                <div class="flex gap-2 mb-4">
-                    <button onclick="generateClaimTable()" class="btn-primary px-4 py-2 rounded-lg">สร้างตาราง</button>
-                    <button onclick="exportClaim()" class="btn-secondary px-4 py-2 rounded-lg">ส่งออก Excel</button>
-                </div>
-                <div id="claim-table" class="overflow-x-auto"></div>
+<!-- Claim Tab -->
+<div id="claim-tab" class="tab-content hidden">
+    <div class="card p-6 mb-6">
+        <h2 class="text-xl font-bold text-emerald-800 mb-4">ตารางเบิก</h2>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+            <div>
+                <label class="block text-sm font-medium mb-2">เดือน</label>
+                <select id="claim-month" class="input-field w-full">
+                    <option value="1">มกราคม</option>
+                    <option value="2">กุมภาพันธ์</option>
+                    <option value="3">มีนาคม</option>
+                    <option value="4">เมษายน</option>
+                    <option value="5">พฤษภาคม</option>
+                    <option value="6">มิถุนายน</option>
+                    <option value="7">กรกฎาคม</option>
+                    <option value="8">สิงหาคม</option>
+                    <option value="9">กันยายน</option>
+                    <option value="10">ตุลาคม</option>
+                    <option value="11">พฤศจิกายน</option>
+                    <option value="12">ธันวาคม</option>
+                </select>
+            </div>
+            <div>
+                <label class="block text-sm font-medium mb-2">ปี</label>
+                <input type="number" id="claim-year" class="input-field w-full" value="2024" min="2020" max="2030">
             </div>
         </div>
+        <div class="flex gap-2 mb-4">
+            <button onclick="openClaimBookingPopup()" class="btn-primary px-4 py-2 rounded-lg">จองวันเบิก</button>
+            <button onclick="generateClaimTable()" class="btn-primary px-4 py-2 rounded-lg">สร้างตาราง</button>
+            <button onclick="exportClaim()" class="btn-secondary px-4 py-2 rounded-lg">ส่งออก Excel</button>
+        </div>
+        <div id="claim-table" class="overflow-x-auto"></div>
+    </div>
+</div>
+
+<!-- Claim Booking Popup -->
+<div id="claim-booking-popup" class="popup-overlay hidden">
+  <div class="popup-content max-w-xl">
+    <div class="flex justify-between items-center mb-4">
+      <h3 class="text-xl font-bold text-emerald-800">จองวันเบิก</h3>
+      <button onclick="closeClaimBookingPopup()" class="bg-gray-200 hover:bg-red-500 hover:text-white text-gray-700 w-8 h-8 rounded-full flex items-center justify-center text-xl font-bold transition-colors duration-200">&times;</button>
+    </div>
+    <form id="claim-booking-form" class="space-y-4">
+      <div>
+        <label class="block mb-1">เลือกพนักงาน</label>
+        <select id="booking-employee" class="input-field w-full" required>
+          <option value="">เลือกพนักงาน</option>
+        </select>
+      </div>
+      <div>
+        <label class="block mb-1">วันที่จอง (เลือกได้หลายวัน)</label>
+        <input type="date" id="booking-date" class="input-field w-full mb-2">
+        <button type="button" onclick="addBookingDate()" class="btn-primary px-2 py-1 rounded text-sm">เพิ่มวันที่</button>
+        <div id="booking-dates-list" class="mt-2"></div>
+      </div>
+      <div>
+        <label class="block mb-1">เบิกแทนวันที่ (เช่น 2025-07-01, 2025-07-02)</label>
+        <input type="text" id="booking-for-dates" class="input-field w-full" placeholder="คั่นด้วย , หรือเว้นวรรค">
+      </div>
+      <input type="hidden" id="editing-booking-id">
+      <div class="flex gap-2">
+        <button type="submit" class="btn-primary px-4 py-2 rounded-lg">บันทึก</button>
+        <button type="button" onclick="closeClaimBookingPopup()" class="btn-secondary px-4 py-2 rounded-lg">ยกเลิก</button>
+      </div>
+    </form>
+    <hr class="my-4">
+    <div>
+      <h4 class="font-semibold mb-2">รายการจองในเดือนนี้</h4>
+      <div id="claim-booking-list"></div>
+    </div>
+  </div>
+</div>
 
         <!-- Employees Tab -->
         <div id="employees-tab" class="tab-content hidden">
@@ -416,7 +455,293 @@
         let workRecords = {};
         let holidays = {};
         let currentScheduleData = {};
+let claimBookings = {};
+let bookingDates = [];
 
+async function loadClaimBookings() {
+  try {
+    const snapshot = await window.dbGet(window.dbRef(window.db, 'claimBookings'));
+    claimBookings = snapshot.val() || {};
+  } catch (e) {
+    claimBookings = {};
+  }
+}
+function renderClaimBookingList() {
+  const container = document.getElementById('claim-booking-list');
+  if (!container) return;
+  container.innerHTML = '';
+  const m = +document.getElementById('claim-month').value;
+  const y = +document.getElementById('claim-year').value;
+  Object.entries(claimBookings)
+    .filter(([id, b]) => b.dates.some(d => {
+      const dt = new Date(d);
+      return dt.getMonth() + 1 === m && dt.getFullYear() === y;
+    }))
+    .forEach(([id, b]) => {
+      const emp = employees[b.employeeId];
+      container.innerHTML += `
+      <div class="border-b py-2 flex justify-between items-center">
+        <div>
+          <b>${emp ? emp.firstname + ' ' + emp.lastname : b.employeeId}</b>
+          <div class="text-sm text-gray-700">วันที่จอง: ${b.dates.join(', ')}</div>
+          ${b.forDates && b.forDates.length > 0 ? `<div class="text-xs text-gray-500">เบิกแทนวันที่: ${b.forDates.join(', ')}</div>` : ''}
+        </div>
+        <div class="flex gap-2">
+          <button onclick="editClaimBooking('${id}')" class="btn-primary px-2 py-1 rounded text-xs">แก้ไข</button>
+          <button onclick="deleteClaimBooking('${id}')" class="bg-red-500 hover:bg-red-600 text-white px-2 py-1 rounded text-xs">ลบ</button>
+        </div>
+      </div>`;
+    });
+}
+function openClaimBookingPopup() {
+  document.getElementById('claim-booking-popup').classList.remove('hidden');
+  document.getElementById('booking-employee').innerHTML = '<option value="">เลือกพนักงาน</option>' +
+    Object.entries(employees).map(([id, emp]) =>
+      `<option value="${id}">${emp.firstname} ${emp.lastname}</option>`
+    ).join('');
+  document.getElementById('booking-date').value = '';
+  document.getElementById('booking-for-dates').value = '';
+  document.getElementById('booking-dates-list').innerHTML = '';
+  document.getElementById('editing-booking-id').value = '';
+  bookingDates = [];
+  renderBookingDatesList();
+  renderClaimBookingList();
+}
+function closeClaimBookingPopup() {
+  document.getElementById('claim-booking-popup').classList.add('hidden');
+}
+function addBookingDate() {
+  const date = document.getElementById('booking-date').value;
+  if (date && !bookingDates.includes(date)) {
+    bookingDates.push(date);
+    renderBookingDatesList();
+  }
+  document.getElementById('booking-date').value = '';
+}
+function removeBookingDate(index) {
+  bookingDates.splice(index, 1);
+  renderBookingDatesList();
+}
+function renderBookingDatesList() {
+  const listDiv = document.getElementById('booking-dates-list');
+  if (!listDiv) return;
+  listDiv.innerHTML = bookingDates.map((d, i) =>
+    `<span class="inline-block bg-emerald-200 text-emerald-800 px-2 py-1 rounded m-1 text-sm">${d}
+       <button onclick="removeBookingDate(${i})" class="text-red-500 ml-1">&times;</button>
+     </span>`
+  ).join('');
+}
+document.getElementById('claim-booking-form').addEventListener('submit', async function(e){
+  e.preventDefault();
+  const employeeId = document.getElementById('booking-employee').value;
+  const forDates = document.getElementById('booking-for-dates').value.trim();
+  const id = document.getElementById('editing-booking-id').value;
+  if (!employeeId || bookingDates.length === 0) {
+    alert('กรุณาเลือกพนักงานและวันที่จอง');
+    return;
+  }
+  const booking = {
+    employeeId,
+    dates: [...bookingDates],
+    forDates: forDates.split(/,|\s/).map(d => d.trim()).filter(d => d),
+    timestamp: Date.now()
+  };
+  try {
+    if (id) {
+      await window.dbSet(window.dbRef(window.db, `claimBookings/${id}`), booking);
+    } else {
+      await window.dbPush(window.dbRef(window.db, 'claimBookings'), booking);
+    }
+    await loadClaimBookings();
+    closeClaimBookingPopup();
+    generateClaimTable();
+    alert('บันทึกการจองสำเร็จ');
+  } catch (error) {
+    alert('เกิดข้อผิดพลาด');
+  }
+});
+async function editClaimBooking(id) {
+  const b = claimBookings[id];
+  openClaimBookingPopup();
+  document.getElementById('booking-employee').value = b.employeeId;
+  bookingDates = [...b.dates];
+  renderBookingDatesList();
+  document.getElementById('booking-for-dates').value = (b.forDates || []).join(', ');
+  document.getElementById('editing-booking-id').value = id;
+}
+async function deleteClaimBooking(id) {
+  if (confirm('ลบการจองนี้?')) {
+    await window.dbRemove(window.dbRef(window.db, `claimBookings/${id}`));
+    await loadClaimBookings();
+    renderClaimBookingList();
+    generateClaimTable();
+  }
+}
+// --- MODIFY generateClaimTable to load and display booking status ---
+async function generateClaimTable() {
+  try {
+    const monthElement = document.getElementById('claim-month');
+    const yearElement = document.getElementById('claim-year');
+    const container = document.getElementById('claim-table');
+    if (!monthElement || !yearElement || !container) {
+      console.error('Claim table elements not found');
+      return;
+    }
+    const month = parseInt(monthElement.value);
+    const year = parseInt(yearElement.value);
+    if (!month || !year) {
+      container.innerHTML = '<p class="text-red-500 text-center">กรุณาเลือกเดือนและปี</p>';
+      return;
+    }
+    const daysInMonth = new Date(year, month, 0).getDate();
+    container.innerHTML = '<div class="text-center py-8"><div class="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-emerald-600"></div><p class="mt-2 text-gray-600">กำลังสร้างตาราง...</p></div>';
+    if (!employees || Object.keys(employees).length === 0) {
+      container.innerHTML = '<p class="text-gray-500 text-center">ยังไม่มีข้อมูลพนักงาน กรุณาเพิ่มพนักงานก่อน</p>';
+      return;
+    }
+    await loadClaimBookings(); // <-- โหลดจองวันเบิกก่อน
+    let html = '<table class="min-w-full border-collapse border border-gray-300">';
+    html += '<thead><tr class="bg-emerald-800 text-white">';
+    html += '<th class="border border-gray-300 p-2">ชื่อ-นามสกุล</th>';
+    for (let day = 1; day <= daysInMonth; day++) {
+      const date = new Date(year, month - 1, day);
+      const dayName = ['อา', 'จ', 'อ', 'พ', 'พฤ', 'ศ', 'ส'][date.getDay()];
+      const dateStr = `${year}-${month.toString().padStart(2, '0')}-${day.toString().padStart(2, '0')}`;
+      const dayOfWeek = date.getDay();
+      let headerClass = 'border border-gray-300 p-1 text-xs';
+      if ((holidays && holidays[dateStr]) || dayOfWeek === 0 || dayOfWeek === 6) {
+        headerClass += ' weekend-header';
+      }
+      html += `<th class="${headerClass}">${day}<br>${dayName}</th>`;
+    }
+    html += '<th class="border border-gray-300 p-2">รวม</th>';
+    html += '</tr></thead>';
+    html += '<tbody>';
+    const scheduleData = await loadScheduleData();
+    Object.entries(employees).forEach(([empId, emp]) => {
+      if (!emp) return;
+      html += '<tr>';
+      html += `<td class="border border-gray-300 p-2 font-medium text-sm" style="width: 150px; min-width: 150px;">
+          <div>${emp.firstname || ''} ${emp.lastname || ''}</div>
+          <div class="text-xs text-gray-600 mt-1">${emp.phone || ''}</div>
+      </td>`;
+      let workDays = 0;
+      for (let day = 1; day <= daysInMonth; day++) {
+        const date = new Date(year, month - 1, day);
+        const dayOfWeek = date.getDay();
+        const dateStr = `${year}-${month.toString().padStart(2, '0')}-${day.toString().padStart(2, '0')}`;
+        const dayRecords = workRecords ? Object.values(workRecords).filter(record => 
+          record && record.employeeId === empId && 
+          (record.date === dateStr || record.claimDate === dateStr)
+        ) : [];
+        let cellClass = 'border border-gray-300 p-1 text-center';
+        let cellContent = '';
+        if (dayOfWeek === 0 || dayOfWeek === 6) {
+          cellClass += ' weekend';
+        }
+        if (holidays && holidays[dateStr]) {
+          cellClass += ' holiday';
+        } else {
+          const scheduleKey = `${empId}_${dateStr}`;
+          const isLeave = scheduleData && scheduleData[scheduleKey] && scheduleData[scheduleKey].shiftType === 'leave';
+          if (isLeave) {
+            cellClass += ' leave';
+          } else {
+            const normalWork = dayRecords.filter(r => r.date === dateStr && r.type === 'normal');
+            const eveningClaims = dayRecords.filter(r => r.claimDate === dateStr && r.type === 'evening');
+            const holidayClaims = dayRecords.filter(r => r.claimDate === dateStr && r.type === 'holiday');
+            if (normalWork.length > 0) {
+              cellClass += ' work-day';
+              workDays++;
+            } else if (eveningClaims.length === 2) {
+              cellClass += ' work-day';
+              workDays++;
+            } else if (eveningClaims.length === 1) {
+              cellClass += ' warning';
+            } else if (holidayClaims.length > 0) {
+              cellClass += ' work-day';
+              workDays++;
+            }
+          }
+        }
+        // แสดงสถานะ "จอง"
+        const isBooked = Object.values(claimBookings||{}).some(booking =>
+          booking.employeeId === empId && booking.dates.includes(dateStr)
+        );
+        if (isBooked) {
+          cellContent += '<span class="inline-block text-xs text-blue-600 ml-1">จอง</span>';
+        }
+        html += `<td class="${cellClass} claim-cell" onclick="showClaimDetails('${empId}', '${dateStr}', ${day})">${cellContent}</td>`;
+      }
+      html += `<td class="border border-gray-300 p-2 text-center font-bold">${workDays}</td>`;
+      html += '</tr>';
+    });
+    html += '</tbody></table>';
+    container.innerHTML = html;
+    // ... (ส่วน legend คงเดิม)
+    const legend = document.createElement('div');
+    legend.className = 'mt-4 p-4 bg-gray-50 rounded-lg border';
+    let holidaysInMonth = '';
+    const monthHolidays = [];
+    for (let day = 1; day <= daysInMonth; day++) {
+      const dateStr = `${year}-${month.toString().padStart(2, '0')}-${day.toString().padStart(2, '0')}`;
+      if (holidays && holidays[dateStr]) {
+        const holidayDate = new Date(year, month - 1, day);
+        const dayName = ['อาทิตย์', 'จันทร์', 'อังคาร', 'พุธ', 'พฤหัสบดี', 'ศุกร์', 'เสาร์'][holidayDate.getDay()];
+        monthHolidays.push(`${day} ${dayName} - ${holidays[dateStr]}`);
+      }
+    }
+    if (monthHolidays.length > 0) {
+      holidaysInMonth = `
+        <div class="mt-4">
+            <h5 class="font-medium text-gray-800 mb-2">วันหยุดในเดือนนี้:</h5>
+            <ul class="text-sm text-gray-700 space-y-1">
+                ${monthHolidays.map(holiday => `<li>• ${holiday}</li>`).join('')}
+            </ul>
+        </div>
+      `;
+    }
+    legend.innerHTML = `
+      <h4 class="font-semibold text-gray-800 mb-2">หมายเหตุ:</h4>
+      <div class="flex flex-wrap gap-4 text-sm">
+        <div class="flex items-center gap-2">
+          <span class="w-6 h-6 bg-red-500 rounded"></span>
+          <span>ช่องสีแดง คือ ลา</span>
+        </div>
+        <div class="flex items-center gap-2">
+          <span class="w-6 h-6 bg-emerald-500 rounded"></span>
+          <span>ช่องสีเขียว คือ เบิกได้</span>
+        </div>
+        <div class="flex items-center gap-2">
+          <span class="w-6 h-6 bg-yellow-500 rounded"></span>
+          <span>ช่องสีเหลือง คือ เวรยังไม่ครบ</span>
+        </div>
+        <div class="flex items-center gap-2">
+          <span class="inline-block text-xs text-blue-600 ml-1">จอง</span>
+          <span>มีการจองวันเบิก</span>
+        </div>
+      </div>
+      ${holidaysInMonth}
+    `;
+    container.appendChild(legend);
+  } catch (error) {
+    console.error('Error in generateClaimTable:', error);
+    const container = document.getElementById('claim-table');
+    if (container) {
+      container.innerHTML = '<p class="text-red-500 text-center">เกิดข้อผิดพลาดในการสร้างตาราง</p>';
+    }
+  }
+}
+// ปิด popup เมื่อคลิกนอก content
+document.addEventListener('click', function(event) {
+  const popup = document.getElementById('claim-booking-popup');
+  if (!popup) return;
+  const popupContent = popup.querySelector('.popup-content');
+  if (!popup.classList.contains('hidden') && !popupContent.contains(event.target) && event.target === popup) {
+    closeClaimBookingPopup();
+  }
+});
+     
 let isScheduleEditing = false;
 
 function showScheduleOverlay(show) {
