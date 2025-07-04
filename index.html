@@ -1,5 +1,3 @@
-
-
 <!DOCTYPE html>
 <html lang="th">
 <head>
@@ -9,41 +7,8 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
-    <!-- เพิ่มสองบรรทัดนี้ใน <head> -->
-<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
-    <script type="module">
-        import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.7.0/firebase-app.js';
-        import { getDatabase, ref, push, set, get, remove, update } from 'https://www.gstatic.com/firebasejs/10.7.0/firebase-database.js';
-
-        const firebaseConfig = {
-            apiKey: "AIzaSyABVSPHnKroNKRKdRJVGUUnbSoo4G5caSM",
-            authDomain: "epid-employeev1.firebaseapp.com",
-            databaseURL: "https://epid-employeev1-default-rtdb.asia-southeast1.firebasedatabase.app",
-            projectId: "epid-employeev1",
-            storageBucket: "epid-employeev1.firebasestorage.app",
-            messagingSenderId: "154704410306",
-            appId: "1:154704410306:web:5b6301055de72b9610ed5b",
-            measurementId: "G-SE72761NVF"
-        };
-
-        try {
-            const app = initializeApp(firebaseConfig);
-            const database = getDatabase(app);
-            window.db = database;
-            window.dbRef = ref;
-            window.dbPush = push;
-            window.dbSet = set;
-            window.dbGet = get;
-            window.dbRemove = remove;
-            window.dbUpdate = update;
-            window.firebaseReady = true;
-            console.log('Firebase initialized successfully');
-        } catch (error) {
-            console.error('Firebase initialization error:', error);
-            window.firebaseReady = false;
-        }
-    </script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
     <style>
         body { font-family: 'Prompt', sans-serif; }
         .tab-active { background-color: #065f46; color: white; }
@@ -91,6 +56,38 @@
             box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04); 
         }
     </style>
+    <script type="module">
+        import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.7.0/firebase-app.js';
+        import { getDatabase, ref, push, set, get, remove, update } from 'https://www.gstatic.com/firebasejs/10.7.0/firebase-database.js';
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyABVSPHnKroNKRKdRJVGUUnbSoo4G5caSM",
+            authDomain: "epid-employeev1.firebaseapp.com",
+            databaseURL: "https://epid-employeev1-default-rtdb.asia-southeast1.firebasedatabase.app",
+            projectId: "epid-employeev1",
+            storageBucket: "epid-employeev1.appspot.com",
+            messagingSenderId: "154704410306",
+            appId: "1:154704410306:web:5b6301055de72b9610ed5b",
+            measurementId: "G-SE72761NVF"
+        };
+
+        try {
+            const app = initializeApp(firebaseConfig);
+            const database = getDatabase(app);
+            window.db = database;
+            window.dbRef = ref;
+            window.dbPush = push;
+            window.dbSet = set;
+            window.dbGet = get;
+            window.dbRemove = remove;
+            window.dbUpdate = update;
+            window.firebaseReady = true;
+            console.log('Firebase initialized successfully');
+        } catch (error) {
+            console.error('Firebase initialization error:', error);
+            window.firebaseReady = false;
+        }
+    </script>
 </head>
 <body class="bg-gray-100 min-h-screen">
     <!-- Navigation -->
@@ -315,6 +312,20 @@
         <div id="claim-tab" class="tab-content hidden">
             <div class="card p-6 mb-6">
                 <h2 class="text-xl font-bold text-emerald-800 mb-4">ตารางเบิก</h2>
+                <!-- ฟอร์มจองวันเบิก -->
+                <div class="card p-4 mb-4 bg-yellow-50">
+                  <h3 class="font-bold text-yellow-700 mb-2">จองวันเบิก</h3>
+                  <form id="claim-reservation-form" class="grid grid-cols-1 md:grid-cols-3 gap-2">
+                    <select id="claim-reserve-employee" class="input-field" required>
+                      <option value="">เลือกพนักงาน</option>
+                    </select>
+                    <input type="date" id="claim-reserve-date" class="input-field" required>
+                    <input type="text" id="claim-reserve-note" class="input-field" placeholder="หมายเหตุ (ถ้ามี)">
+                    <div class="md:col-span-3">
+                      <button type="submit" class="btn-primary px-4 py-2 rounded-lg mt-2">จองวันเบิก</button>
+                    </div>
+                  </form>
+                </div>
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
                     <div>
                         <label class="block text-sm font-medium mb-2">เดือน</label>
@@ -395,16 +406,16 @@
         </div>
     </div>
 
+    </div>
+
     <!-- Claim Details Popup -->
     <div id="claim-popup" class="popup-overlay hidden">
         <div class="popup-content">
             <div class="flex justify-between items-center mb-4">
                 <h3 class="text-xl font-bold text-emerald-800">รายละเอียดการเบิก</h3>
-                <button onclick="closeClaimPopup()" class="bg-gray-200 hover:bg-red-500 hover:text-white text-gray-700 w-8 h-8 rounded-full flex items-center justify-center text-xl font-bold transition-colors duration-200">&times;</button>
+                <button onclick="closeClaimPopup()" class="bg-gray-200 hover:bg-red-500 hover:text-white text-gray-700 w-8 h-8 rounded-full flex items-center justify-center text-xl font-bold transition">×</button>
             </div>
-            <div id="claim-popup-content">
-                <!-- Content will be populated by JavaScript -->
-            </div>
+            <div id="claim-popup-content"></div>
         </div>
     </div>
 
@@ -415,6 +426,7 @@
         let workRecords = {};
         let holidays = {};
         let currentScheduleData = {};
+        let claimReservations = {}; // เพิ่มตัวแปรนี้
 
 let isScheduleEditing = false;
 
@@ -2426,6 +2438,206 @@ function exportSchedulePDF() {
     pdfOverlay.style.display = 'none';
   });
 }
+
+
+        // ฟังก์ชันโหลดข้อมูลจองวันเบิก
+        async function loadClaimReservations() {
+            if (!window.db || !window.dbGet || !window.dbRef || !window.firebaseReady) {
+                claimReservations = {};
+                return;
+            }
+            const snapshot = await window.dbGet(window.dbRef(window.db, 'claimReservations'));
+            claimReservations = snapshot.val() || {};
+        }
+
+        // อัปเดต select พนักงานในฟอร์มจอง
+        function updateEmployeeSelects() {
+            const recordSelect = document.getElementById('record-employee');
+            if (recordSelect) {
+                recordSelect.innerHTML = '<option value="">เลือกพนักงาน</option>';
+                Object.entries(employees).forEach(([id, emp]) => {
+                    const option = document.createElement('option');
+                    option.value = id;
+                    option.textContent = `${emp.firstname} ${emp.lastname}`;
+                    recordSelect.appendChild(option);
+                });
+            }
+            // สำหรับฟอร์มจองวันเบิก
+            const reserveSelect = document.getElementById('claim-reserve-employee');
+            if (reserveSelect) {
+                reserveSelect.innerHTML = '<option value="">เลือกพนักงาน</option>';
+                Object.entries(employees).forEach(([id, emp]) => {
+                    const option = document.createElement('option');
+                    option.value = id;
+                    option.textContent = `${emp.firstname} ${emp.lastname}`;
+                    reserveSelect.appendChild(option);
+                });
+            }
+            // ... (อัปเดต select อื่นๆ ได้ตามเดิม)
+        }
+
+        // Event สำหรับฟอร์มจองวันเบิก
+        document.addEventListener('DOMContentLoaded', function() {
+            document.getElementById('claim-reservation-form').addEventListener('submit', async function(e) {
+                e.preventDefault();
+                const employeeId = document.getElementById('claim-reserve-employee').value;
+                const date = document.getElementById('claim-reserve-date').value;
+                const note = document.getElementById('claim-reserve-note').value;
+                if (!employeeId || !date) return alert('กรุณากรอกข้อมูลให้ครบถ้วน');
+
+                const reservationData = {
+                    employeeId, date, note: note || "",
+                    createdAt: new Date().toISOString()
+                };
+                await window.dbPush(window.dbRef(window.db, 'claimReservations'), reservationData);
+                await loadClaimReservations();
+                generateClaimTable();
+                alert('จองวันเบิกสำเร็จ');
+                this.reset();
+            });
+        });
+
+        // ฟังก์ชันสร้างตารางเบิกรวมการจอง
+        function generateClaimTable() {
+            const claimTable = document.getElementById('claim-table');
+            if (!claimTable) return;
+            claimTable.innerHTML = '';
+
+            // เดือนและปีที่เลือก
+            const claimMonth = parseInt(document.getElementById('claim-month').value);
+            const claimYear = parseInt(document.getElementById('claim-year').value);
+
+            // 1. วาดหัวตาราง
+            let tableHtml = `
+                <table class="min-w-full text-center table-auto border">
+                    <thead>
+                        <tr class="bg-emerald-800 text-white">
+                            <th class="py-2 px-4 border">ชื่อ</th>
+                            <th class="py-2 px-4 border">วันที่</th>
+                            <th class="py-2 px-4 border">หมายเหตุ/รายละเอียด</th>
+                            <th class="py-2 px-4 border"></th>
+                        </tr>
+                    </thead>
+                    <tbody>
+            `;
+
+            // 2. วาดข้อมูลเบิกจริง (workRecords)
+            Object.entries(workRecords).forEach(([id, rec]) => {
+                if (!rec.claim_date) return;
+                const d = new Date(rec.claim_date);
+                if (d.getMonth() + 1 !== claimMonth || d.getFullYear() !== claimYear) return;
+
+                const emp = employees[rec.employeeId] || {};
+                const empName = `${emp.firstname || ""} ${emp.lastname || ""}`;
+                tableHtml += `
+                    <tr class="bg-white hover:bg-gray-100">
+                        <td class="border py-1 px-2">${empName}</td>
+                        <td class="border py-1 px-2">${rec.claim_date}</td>
+                        <td class="border py-1 px-2">${rec.other || "-"}</td>
+                        <td class="border py-1 px-2">
+                            <button class="btn-secondary px-2 py-1 rounded" onclick="showClaimPopup('${id}')">ดูรายละเอียด</button>
+                        </td>
+                    </tr>
+                `;
+            });
+
+            // 3. วาดข้อมูลจองวันเบิก (claimReservations)
+            Object.entries(claimReservations).forEach(([id, res]) => {
+                if (!res.date) return;
+                const d = new Date(res.date);
+                if (d.getMonth() + 1 !== claimMonth || d.getFullYear() !== claimYear) return;
+
+                const emp = employees[res.employeeId] || {};
+                const empName = `${emp.firstname || ""} ${emp.lastname || ""}`;
+                tableHtml += `
+                    <tr class="bg-yellow-100 hover:bg-yellow-200">
+                        <td class="border py-1 px-2">${empName} <span class="text-yellow-700 font-bold ml-2">[จอง]</span></td>
+                        <td class="border py-1 px-2">${res.date}</td>
+                        <td class="border py-1 px-2">${res.note || "-"}</td>
+                        <td class="border py-1 px-2">
+                            <button class="btn-secondary px-2 py-1 rounded" onclick="showReservationPopup('${id}')">ดูรายละเอียด</button>
+                        </td>
+                    </tr>
+                `;
+            });
+
+            tableHtml += `</tbody></table>`;
+            claimTable.innerHTML = tableHtml;
+        }
+
+        // ป๊อปอัพรายละเอียดเบิกจริง (ใช้ของเดิม)
+        function showClaimPopup(id) {
+            const rec = workRecords[id];
+            if (!rec) return;
+            const emp = employees[rec.employeeId];
+            const empName = emp ? `${emp.firstname} ${emp.lastname}` : "ไม่ทราบชื่อ";
+            document.getElementById('claim-popup-content').innerHTML = `
+                <div class="mb-2"><b>ชื่อ:</b> ${empName}</div>
+                <div class="mb-2"><b>วันที่เบิก:</b> ${rec.claim_date}</div>
+                <div class="mb-2"><b>หมายเหตุ:</b> ${rec.other || '-'}</div>
+            `;
+            document.getElementById('claim-popup').classList.remove('hidden');
+        }
+
+        // ป๊อปอัพรายละเอียดจอง
+        function showReservationPopup(resId) {
+            const res = claimReservations[resId];
+            if (!res) return;
+            const emp = employees[res.employeeId];
+            const empName = emp ? `${emp.firstname} ${emp.lastname}` : "ไม่ทราบชื่อ";
+            document.getElementById('claim-popup-content').innerHTML = `
+                <div class="mb-2"><b>ชื่อ:</b> ${empName}</div>
+                <div class="mb-2"><b>วันที่จอง:</b> ${res.date}</div>
+                <div class="mb-2"><b>หมายเหตุ:</b> ${res.note || '-'}</div>
+                <div class="text-yellow-700 font-bold">นี่คือรายการจองวันเบิก (ยังไม่ใช่การเบิกจริง)</div>
+            `;
+            document.getElementById('claim-popup').classList.remove('hidden');
+        }
+
+        // ปุ่มปิด popup
+        function closeClaimPopup() {
+            document.getElementById('claim-popup').classList.add('hidden');
+        }
+
+        // เพิ่มการโหลดข้อมูลจองใน waitForFirebase
+        document.addEventListener('DOMContentLoaded', function() {
+            // ... (ส่วน initialize เดิม)
+            function waitForFirebase() {
+                if (window.firebaseReady === true) {
+                    loadEmployees().then(() => {
+                        return loadTasks();
+                    }).then(() => {
+                        return loadWorkRecords();
+                    }).then(() => {
+                        return loadHolidays();
+                    }).then(() => {
+                        return loadClaimReservations(); // <- เพิ่มตรงนี้
+                    }).then(() => {
+                        // Only load summary if we're on the summary tab
+                        if (!document.getElementById('summary-tab').classList.contains('hidden')) {
+                            loadSummary();
+                        }
+                        console.log('All data loaded successfully');
+                    }).catch(error => {
+                        console.error('Background loading error:', error);
+                    });
+                } else if (window.firebaseReady === false) {
+                    employees = {};
+                    tasks = {};
+                    workRecords = {};
+                    holidays = {};
+                    claimReservations = {};
+                    updateEmployeeSelects();
+                    updateTaskSelects();
+                } else {
+                    setTimeout(waitForFirebase, 100);
+                }
+            }
+            setTimeout(waitForFirebase, 100);
+        });
+
+
+        
         
         // Close popup when clicking outside
         document.addEventListener('click', function(event) {
