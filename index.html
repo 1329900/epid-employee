@@ -1,4 +1,4 @@
-
+ 
 
 
 <!DOCTYPE html>
@@ -11,8 +11,40 @@
     <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <!-- เพิ่มสองบรรทัดนี้ใน <head> -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <script type="module">
+        import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.7.0/firebase-app.js';
+        import { getDatabase, ref, push, set, get, remove, update } from 'https://www.gstatic.com/firebasejs/10.7.0/firebase-database.js';
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyABVSPHnKroNKRKdRJVGUUnbSoo4G5caSM",
+            authDomain: "epid-employeev1.firebaseapp.com",
+            databaseURL: "https://epid-employeev1-default-rtdb.asia-southeast1.firebasedatabase.app",
+            projectId: "epid-employeev1",
+            storageBucket: "epid-employeev1.firebasestorage.app",
+            messagingSenderId: "154704410306",
+            appId: "1:154704410306:web:5b6301055de72b9610ed5b",
+            measurementId: "G-SE72761NVF"
+        };
+
+        try {
+            const app = initializeApp(firebaseConfig);
+            const database = getDatabase(app);
+            window.db = database;
+            window.dbRef = ref;
+            window.dbPush = push;
+            window.dbSet = set;
+            window.dbGet = get;
+            window.dbRemove = remove;
+            window.dbUpdate = update;
+            window.firebaseReady = true;
+            console.log('Firebase initialized successfully');
+        } catch (error) {
+            console.error('Firebase initialization error:', error);
+            window.firebaseReady = false;
+        }
+    </script>
     <style>
         body { font-family: 'Prompt', sans-serif; }
         .tab-active { background-color: #065f46; color: white; }
@@ -59,46 +91,7 @@
             overflow-y: auto; 
             box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04); 
         }
-        /* เพิ่มสำหรับ cell ที่จองเบิก */
-        .reserved-claim-cell {
-            background-color: #bbf7d0 !important; /* tailwind green-200 */
-            color: #065f46 !important;
-            font-weight: bold;
-            font-size: 1.2rem;
-        }
     </style>
-    <script type="module">
-        import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.7.0/firebase-app.js';
-        import { getDatabase, ref, push, set, get, remove, update } from 'https://www.gstatic.com/firebasejs/10.7.0/firebase-database.js';
-
-        const firebaseConfig = {
-            apiKey: "AIzaSyABVSPHnKroNKRKdRJVGUUnbSoo4G5caSM",
-            authDomain: "epid-employeev1.firebaseapp.com",
-            databaseURL: "https://epid-employeev1-default-rtdb.asia-southeast1.firebasedatabase.app",
-            projectId: "epid-employeev1",
-            storageBucket: "epid-employeev1.firebasestorage.app",
-            messagingSenderId: "154704410306",
-            appId: "1:154704410306:web:5b6301055de72b9610ed5b",
-            measurementId: "G-SE72761NVF"
-        };
-
-        try {
-            const app = initializeApp(firebaseConfig);
-            const database = getDatabase(app);
-            window.db = database;
-            window.dbRef = ref;
-            window.dbPush = push;
-            window.dbSet = set;
-            window.dbGet = get;
-            window.dbRemove = remove;
-            window.dbUpdate = update;
-            window.firebaseReady = true;
-            console.log('Firebase initialized successfully');
-        } catch (error) {
-            console.error('Firebase initialization error:', error);
-            window.firebaseReady = false;
-        }
-    </script>
 </head>
 <body class="bg-gray-100 min-h-screen">
     <!-- Navigation -->
@@ -423,64 +416,6 @@
         let workRecords = {};
         let holidays = {};
         let currentScheduleData = {};
-        // ----------- เพิ่มตัวแปรใหม่สำหรับจองเบิก
-        let reservedClaims = {};
-
-        // ----------- เพิ่มฟังก์ชันสำหรับจองเบิก
-        async function loadReservedClaims() {
-            try {
-                if (window.db && window.dbGet && window.dbRef && window.firebaseReady) {
-                    const snapshot = await window.dbGet(window.dbRef(window.db, 'reservedClaims'));
-                    reservedClaims = snapshot.val() || {};
-                } else {
-                    reservedClaims = {};
-                }
-            } catch (error) {
-                reservedClaims = {};
-            }
-        }
-
-        async function saveReservedClaim(empId, date, note = "") {
-            const key = `${empId}_${date}`;
-            await window.dbSet(window.dbRef(window.db, `reservedClaims/${key}`), {
-                employeeId: empId,
-                date: date,
-                reservedAt: Date.now(),
-                note: note,
-            });
-            reservedClaims[key] = { employeeId: empId, date, reservedAt: Date.now(), note };
-        }
-
-        async function removeReservedClaim(empId, date) {
-            const key = `${empId}_${date}`;
-            await window.dbRemove(window.dbRef(window.db, `reservedClaims/${key}`));
-            delete reservedClaims[key];
-        }
-
-        // popup สำหรับจอง/แก้ไข/ยกเลิก
-        function showReserveClaimPopup(empId, date, day) {
-            const key = `${empId}_${date}`;
-            const emp = employees[empId];
-            const reserved = reservedClaims[key];
-            let note = reserved?.note || "";
-
-            let msg = `พนักงาน: ${emp?.firstname} ${emp?.lastname}\nวันที่: ${date}\nหมายเหตุ:`;
-            if (reserved) {
-                // แก้ไข/ลบ
-                const newNote = prompt(`${msg}\n\n* แก้ไขหมายเหตุ (ว่างเพื่อลบ):`, note);
-                if (newNote === null) return; // user cancel
-                if (newNote === '' && confirm('ต้องการลบการจองใช่หรือไม่?')) {
-                    removeReservedClaim(empId, date).then(() => generateClaimTable());
-                } else if (newNote !== note) {
-                    saveReservedClaim(empId, date, newNote).then(() => generateClaimTable());
-                }
-            } else {
-                // จองใหม่
-                const newNote = prompt(`${msg}\n\n* เพิ่มหมายเหตุได้ (ไม่บังคับ):`, "");
-                if (newNote === null) return;
-                saveReservedClaim(empId, date, newNote).then(() => generateClaimTable());
-            }
-        }
 
 let isScheduleEditing = false;
 
@@ -1714,8 +1649,6 @@ document.addEventListener('DOMContentLoaded', () => {
         // Claim table management
         async function generateClaimTable() {
             try {
-                // --- โหลด reservedClaims ทุกครั้งก่อนวาด
-                await loadReservedClaims();
                 const monthElement = document.getElementById('claim-month');
                 const yearElement = document.getElementById('claim-year');
                 const container = document.getElementById('claim-table');
@@ -1786,7 +1719,6 @@ document.addEventListener('DOMContentLoaded', () => {
                         const date = new Date(year, month - 1, day);
                         const dayOfWeek = date.getDay();
                         const dateStr = `${year}-${month.toString().padStart(2, '0')}-${day.toString().padStart(2, '0')}`;
-                        const key = `${empId}_${dateStr}`; // ใช้ตรวจสอบการจอง
                         
                         // Check work records for this employee and date
                         const dayRecords = workRecords ? Object.values(workRecords).filter(record => 
@@ -1830,14 +1762,8 @@ document.addEventListener('DOMContentLoaded', () => {
                                 }
                             }
                         }
-
-                        // --- เพิ่มแสดงจอง
-                        if (reservedClaims[key]) {
-                            cellClass += ' reserved-claim-cell';
-                            cellContent = '✓';
-                        }
-                        // --- เปลี่ยน onclick เป็น showReserveClaimPopup
-                        html += `<td class="${cellClass} claim-cell" onclick="showReserveClaimPopup('${empId}', '${dateStr}', ${day})">${cellContent}</td>`;
+                        
+                        html += `<td class="${cellClass} claim-cell" onclick="showClaimDetails('${empId}', '${dateStr}', ${day})">${cellContent}</td>`;
                     }
                     
                     html += `<td class="border border-gray-300 p-2 text-center font-bold">${workDays}</td>`;
@@ -1890,10 +1816,6 @@ document.addEventListener('DOMContentLoaded', () => {
                             <span class="w-6 h-6 bg-yellow-500 rounded"></span>
                             <span>ช่องสีเหลือง คือ เวรยังไม่ครบ</span>
                         </div>
-                        <div class="flex items-center gap-2">
-                            <span class="w-6 h-6 reserved-claim-cell text-white rounded text-center flex items-center justify-center">✓</span>
-                            <span>จองวันเบิก</span>
-                        </div>
                     </div>
                     ${holidaysInMonth}
                 `;
@@ -1906,7 +1828,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 }
             }
         }
-    
+
         // Export functions
         function exportSummary() {
             const startDate = document.getElementById('summary-start-date').value;
@@ -2518,6 +2440,5 @@ function exportSchedulePDF() {
             }
         });
     </script>
-<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'958ab5b5e2997dc6',t:'MTc1MTQyMzMwNy4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script>
-</body>
+<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'958ab5b5e2997dc6',t:'MTc1MTQyMzMwNy4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
 </html>
