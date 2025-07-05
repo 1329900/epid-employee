@@ -2135,25 +2135,25 @@ html += `<td class="${cellClass} claim-cell" style="position:relative;" onclick=
                 }
                 
                 legend.innerHTML = `
-                    <h4 class="font-semibold text-gray-800 mb-2">หมายเหตุ:</h4>
-                    <div class="flex flex-wrap gap-4 text-sm">
-                        <div class="flex items-center gap-2">
-                            <span class="w-6 h-6 bg-red-500 rounded"></span>
-                            <span>ช่องสีแดง คือ ลา</span>
-                        </div>
-                        <div class="flex items-center gap-2">
-                            <span class="w-6 h-6 bg-emerald-500 rounded"></span>
-                            <span>ช่องสีเขียว คือ เบิกได้</span>
-                        </div>
-                        <div class="flex items-center gap-2">
-                            <span class="w-6 h-6 bg-yellow-500 rounded"></span>
-                            <span>ช่องสีเหลือง คือ เวรยังไม่ครบ</span>
-                        </div>
-                        <div class="flex items-center gap-2">
-                            <span class="inline-block text-xs text-blue-600 ml-1">จอง</span>
-                            <span>มีการจองวันเบิก</span>
-                        </div>
-                    </div>
+  <h4 class="font-semibold text-gray-800 mb-2">หมายเหตุ:</h4>
+  <div class="flex flex-wrap gap-4 text-sm">
+    <div class="flex items-center gap-2">
+      <span class="w-6 h-6 bg-red-500 rounded"></span>
+      <span>ช่องสีแดง คือ ลา</span>
+    </div>
+    <div class="flex items-center gap-2">
+      <span class="w-6 h-6 bg-emerald-500 rounded"></span>
+      <span>ช่องสีเขียว คือ เบิกได้</span>
+    </div>
+    <div class="flex items-center gap-2">
+      <span class="w-6 h-6 bg-yellow-500 rounded"></span>
+      <span>ช่องสีเหลือง คือ เวรยังไม่ครบ</span>
+    </div>
+    <div class="flex items-center gap-2">
+      <span class="inline-block text-xs font-bold text-red-600 ml-1">จอง</span>
+      <span>มีการจองวันเบิก</span>
+    </div>
+  </div>
                     ${holidaysInMonth}
                 `;
                 container.appendChild(legend);
