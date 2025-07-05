@@ -1838,8 +1838,7 @@ function waitForFirebase() {
             updateHolidayList();
         }
 
-        // Claim table management
-// Claim table management (เวอร์ชันรวม)
+// Claim table management (เวอร์ชันปรับปรุงตามที่ขอ)
 async function generateClaimTable() {
   try {
     const monthElement = document.getElementById('claim-month');
@@ -1903,41 +1902,43 @@ async function generateClaimTable() {
         const date = new Date(year, month - 1, day);
         const dayOfWeek = date.getDay();
         const dateStr = `${year}-${month.toString().padStart(2, '0')}-${day.toString().padStart(2, '0')}`;
-        // Check work records for this employee and date
-        const dayRecords = workRecords ? Object.values(workRecords).filter(record => 
-          record && record.employeeId === empId && 
-          (record.date === dateStr || record.claimDate === dateStr)
-        ) : [];
         let cellClass = 'border border-gray-300 p-1 text-center relative';
         let cellContent = '';
-        // Add weekend highlighting
+        // Add weekend/holiday color
         if (dayOfWeek === 0 || dayOfWeek === 6) cellClass += ' weekend';
-        if (holidays && holidays[dateStr]) {
-          cellClass += ' holiday';
+        if (holidays && holidays[dateStr]) cellClass += ' holiday';
+
+        // --- ตรวจสอบสถานะการลา/เบิก/เวรยังไม่ครบ แม้จะเป็นวันหยุด ---
+        const scheduleKey = `${empId}_${dateStr}`;
+        const isLeave = scheduleData && scheduleData[scheduleKey] && scheduleData[scheduleKey].shiftType === 'leave';
+        const dayRecords = workRecords ? Object.values(workRecords).filter(record =>
+          record && record.employeeId === empId &&
+          (record.date === dateStr || record.claimDate === dateStr)
+        ) : [];
+        if (isLeave) {
+          cellClass += ' leave';
+          // cellContent = 'ล'; // แสดงตัวอักษรถ้าต้องการ
         } else {
-          // Check if this employee has leave on this date from schedule
-          const scheduleKey = `${empId}_${dateStr}`;
-          const isLeave = scheduleData && scheduleData[scheduleKey] && scheduleData[scheduleKey].shiftType === 'leave';
-          if (isLeave) {
-            cellClass += ' leave';
-          } else {
-            const normalWork = dayRecords.filter(r => r.date === dateStr && r.type === 'normal');
-            const eveningClaims = dayRecords.filter(r => r.claimDate === dateStr && r.type === 'evening');
-            const holidayClaims = dayRecords.filter(r => r.claimDate === dateStr && r.type === 'holiday');
-            if (normalWork.length > 0) {
-              cellClass += ' work-day';
-              workDays++;
-            } else if (eveningClaims.length === 2) {
-              cellClass += ' work-day';
-              workDays++;
-            } else if (eveningClaims.length === 1) {
-              cellClass += ' warning';
-            } else if (holidayClaims.length > 0) {
-              cellClass += ' work-day';
-              workDays++;
-            }
+          const normalWork = dayRecords.filter(r => r.date === dateStr && r.type === 'normal');
+          const eveningClaims = dayRecords.filter(r => r.claimDate === dateStr && r.type === 'evening');
+          const holidayClaims = dayRecords.filter(r => r.claimDate === dateStr && r.type === 'holiday');
+          if (normalWork.length > 0) {
+            cellClass += ' work-day';
+            workDays++;
+          } else if (eveningClaims.length === 2) {
+            cellClass += ' work-day';
+            workDays++;
+          } else if (eveningClaims.length === 1) {
+            cellClass += ' warning';
+          } else if (holidayClaims.length > 0) {
+            cellClass += ' work-day';
+            workDays++;
+          } else if (holidays && holidays[dateStr]) {
+            // ไม่มีข้อมูลอะไรเลย เป็นวันหยุดจริง ๆ
+            cellContent = 'วันหยุด';
           }
         }
+
         // ตรวจสอบจอง
         let isBooked = false;
         if (claimBookings && typeof claimBookings === "object") {
