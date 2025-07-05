@@ -594,139 +594,7 @@ async function deleteClaimBooking(id) {
     generateClaimTable();
   }
 }
-     
-// --- MODIFY generateClaimTable to load and display booking status ---
-async function generateClaimTable() {
-  try {
-    const monthElement = document.getElementById('claim-month');
-    const yearElement = document.getElementById('claim-year');
-    const container = document.getElementById('claim-table');
-    if (!monthElement || !yearElement || !container) {
-      console.error('Claim table elements not found');
-      return;
-    }
-    const month = parseInt(monthElement.value);
-    const year = parseInt(yearElement.value);
-    if (!month || !year) {
-      container.innerHTML = '<p class="text-red-500 text-center">กรุณาเลือกเดือนและปี</p>';
-      return;
-    }
-    const daysInMonth = new Date(year, month, 0).getDate();
-    container.innerHTML = '<div class="text-center py-8"><div class="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-emerald-600"></div><p class="mt-2 text-gray-600">กำลังสร้างตาราง...</p></div>';
-    if (!employees || Object.keys(employees).length === 0) {
-      container.innerHTML = '<p class="text-gray-500 text-center">ยังไม่มีข้อมูลพนักงาน กรุณาเพิ่มพนักงานก่อน</p>';
-      return;
-    }
-    await loadClaimBookings();
-    let html = '<table class="min-w-full border-collapse border border-gray-300">';
-    html += '<thead><tr class="bg-emerald-800 text-white">';
-    html += '<th class="border border-gray-300 p-2">ชื่อ-นามสกุล</th>';
-    for (let day = 1; day <= daysInMonth; day++) {
-      const date = new Date(year, month - 1, day);
-      const dayName = ['อา', 'จ', 'อ', 'พ', 'พฤ', 'ศ', 'ส'][date.getDay()];
-      html += `<th class="border border-gray-300 p-1 text-xs">${day}<br>${dayName}</th>`;
-    }
-    html += '<th class="border border-gray-300 p-2">รวม</th>';
-    html += '</tr></thead><tbody>';
-    const scheduleData = await loadScheduleData();
-    Object.entries(employees).forEach(([empId, emp]) => {
-      if (!emp) return;
-      html += '<tr>';
-      html += `<td class="border border-gray-300 p-2 font-medium text-sm" style="width: 150px; min-width: 150px;">
-        <div>${emp.firstname || ''} ${emp.lastname || ''}</div>
-        <div class="text-xs text-gray-600 mt-1">${emp.phone || ''}</div>
-      </td>`;
-      let workDays = 0;
-      for (let day = 1; day <= daysInMonth; day++) {
-        const date = new Date(year, month - 1, day);
-        const dateStr = `${year}-${month.toString().padStart(2, '0')}-${day.toString().padStart(2, '0')}`;
-        const dayOfWeek = date.getDay();
-        let cellClass = 'border border-gray-300 p-1 text-center relative';
-        let cellContent = '';
-        if (dayOfWeek === 0 || dayOfWeek === 6) cellClass += ' weekend';
-        if (holidays && holidays[dateStr]) {
-          cellClass += ' holiday';
-        } else {
-          const scheduleKey = `${empId}_${dateStr}`;
-          const isLeave = scheduleData && scheduleData[scheduleKey] && scheduleData[scheduleKey].shiftType === 'leave';
-          const dayRecords = workRecords ? Object.values(workRecords).filter(record =>
-            record && record.employeeId === empId && (record.date === dateStr || record.claimDate === dateStr)
-          ) : [];
-          if (isLeave) {
-            cellClass += ' leave';
-          } else {
-            const normalWork = dayRecords.filter(r => r.date === dateStr && r.type === 'normal');
-            const eveningClaims = dayRecords.filter(r => r.claimDate === dateStr && r.type === 'evening');
-            const holidayClaims = dayRecords.filter(r => r.claimDate === dateStr && r.type === 'holiday');
-            if (normalWork.length > 0) {
-              cellClass += ' work-day';
-              workDays++;
-            } else if (eveningClaims.length === 2) {
-              cellClass += ' work-day';
-              workDays++;
-            } else if (eveningClaims.length === 1) {
-              cellClass += ' warning';
-            } else if (holidayClaims.length > 0) {
-              cellClass += ' work-day';
-              workDays++;
-            }
-          }
-        }
-        // >>>> ตรวจสอบจอง <<<<
-        let isBooked = false;
-        if (claimBookings && typeof claimBookings === "object") {
-          isBooked = Object.values(claimBookings).some(booking =>
-            booking &&
-            booking.employeeId === empId &&
-            String(booking.date) === dateStr
-          );
-        }
-        let bookedLayer = '';
-        if (isBooked) {
-          bookedLayer = `<span style="position:absolute;bottom:2px;right:2px;z-index:100;font-size:0.75em;color:#2563eb;background:rgba(255,255,255,0.88);padding:0 4px;border-radius:4px;pointer-events:none;">จอง</span>`;
-        }
-        html += `<td class="${cellClass} claim-cell" style="position:relative;" onclick="showClaimDetails('${empId}', '${dateStr}', ${day})">${cellContent}${bookedLayer}</td>`;
-      }
-      html += `<td class="border border-gray-300 p-2 text-center font-bold">${workDays}</td>`;
-      html += '</tr>';
-    });
-    html += '</tbody></table>';
-    container.innerHTML = html;
-
-    // legend
-    const legend = document.createElement('div');
-    legend.className = 'mt-4 p-4 bg-gray-50 rounded-lg border';
-    legend.innerHTML = `
-      <h4 class="font-semibold text-gray-800 mb-2">หมายเหตุ:</h4>
-      <div class="flex flex-wrap gap-4 text-sm">
-        <div class="flex items-center gap-2">
-          <span class="w-6 h-6 bg-red-500 rounded"></span>
-          <span>ช่องสีแดง คือ ลา</span>
-        </div>
-        <div class="flex items-center gap-2">
-          <span class="w-6 h-6 bg-emerald-500 rounded"></span>
-          <span>ช่องสีเขียว คือ เบิกได้</span>
-        </div>
-        <div class="flex items-center gap-2">
-          <span class="w-6 h-6 bg-yellow-500 rounded"></span>
-          <span>ช่องสีเหลือง คือ เวรยังไม่ครบ</span>
-        </div>
-        <div class="flex items-center gap-2">
-          <span class="inline-block text-xs text-blue-600 ml-1">สวัสดีจ้า๑</span>
-          <span>มีการจองวันเบิก</span>
-        </div>
-      </div>
-    `;
-    container.appendChild(legend);
-  } catch (error) {
-    console.error('Error in generateClaimTable:', error);
-    const container = document.getElementById('claim-table');
-    if (container) {
-      container.innerHTML = '<p class="text-red-500 text-center">เกิดข้อผิดพลาดในการสร้างตาราง</p>';
-    }
-  }
-}
-     
+          
 // ปิด popup เมื่อคลิกนอก content
 document.addEventListener('click', function(event) {
   const popup = document.getElementById('claim-booking-popup');
@@ -1971,208 +1839,180 @@ function waitForFirebase() {
         }
 
         // Claim table management
-        async function generateClaimTable() {
-            try {
-                const monthElement = document.getElementById('claim-month');
-                const yearElement = document.getElementById('claim-year');
-                const container = document.getElementById('claim-table');
-                
-                if (!monthElement || !yearElement || !container) {
-                    console.error('Claim table elements not found');
-                    return;
-                }
-                
-                const month = parseInt(monthElement.value);
-                const year = parseInt(yearElement.value);
-                
-                if (!month || !year) {
-                    container.innerHTML = '<p class="text-red-500 text-center">กรุณาเลือกเดือนและปี</p>';
-                    return;
-                }
-                
-                const daysInMonth = new Date(year, month, 0).getDate();
-                
-                // Show loading
-                container.innerHTML = '<div class="text-center py-8"><div class="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-emerald-600"></div><p class="mt-2 text-gray-600">กำลังสร้างตาราง...</p></div>';
-                
-                if (!employees || Object.keys(employees).length === 0) {
-                    container.innerHTML = '<p class="text-gray-500 text-center">ยังไม่มีข้อมูลพนักงาน กรุณาเพิ่มพนักงานก่อน</p>';
-                    return;
-                }
-                
-                let html = '<table class="min-w-full border-collapse border border-gray-300">';
-                
-                // Header
-                html += '<thead><tr class="bg-emerald-800 text-white">';
-                html += '<th class="border border-gray-300 p-2">ชื่อ-นามสกุล</th>';
-                
-                for (let day = 1; day <= daysInMonth; day++) {
-                    const date = new Date(year, month - 1, day);
-                    const dayName = ['อา', 'จ', 'อ', 'พ', 'พฤ', 'ศ', 'ส'][date.getDay()];
-                    const dateStr = `${year}-${month.toString().padStart(2, '0')}-${day.toString().padStart(2, '0')}`;
-                    const dayOfWeek = date.getDay();
-                    
-                    let headerClass = 'border border-gray-300 p-1 text-xs';
-                    if ((holidays && holidays[dateStr]) || dayOfWeek === 0 || dayOfWeek === 6) {
-                        headerClass += ' weekend-header';
-                    }
-                    
-                    html += `<th class="${headerClass}">${day}<br>${dayName}</th>`;
-                }
-                html += '<th class="border border-gray-300 p-2">รวม</th>';
-                html += '</tr></thead>';
-                
-                // Body
-                html += '<tbody>';
-                
-                // Load schedule data once
-                const scheduleData = await loadScheduleData();
-                
-                Object.entries(employees).forEach(([empId, emp]) => {
-                    if (!emp) return;
-                    
-                    html += '<tr>';
-                    html += `<td class="border border-gray-300 p-2 font-medium text-sm" style="width: 150px; min-width: 150px;">
-                        <div>${emp.firstname || ''} ${emp.lastname || ''}</div>
-                        <div class="text-xs text-gray-600 mt-1">${emp.phone || ''}</div>
-                    </td>`;
-                    
-                    let workDays = 0;
-                    
-                    for (let day = 1; day <= daysInMonth; day++) {
-                        const date = new Date(year, month - 1, day);
-                        const dayOfWeek = date.getDay();
-                        const dateStr = `${year}-${month.toString().padStart(2, '0')}-${day.toString().padStart(2, '0')}`;
-                        
-                        // Check work records for this employee and date
-                        const dayRecords = workRecords ? Object.values(workRecords).filter(record => 
-                            record && record.employeeId === empId && 
-                            (record.date === dateStr || record.claimDate === dateStr)
-                        ) : [];
-                        
-                        let cellClass = 'border border-gray-300 p-1 text-center';
-                        let cellContent = '';
-                        
-                        // Add weekend highlighting
-                        if (dayOfWeek === 0 || dayOfWeek === 6) {
-                            cellClass += ' weekend';
-                        }
-                        
-                        if (holidays && holidays[dateStr]) {
-                            cellClass += ' holiday';
-                        } else {
-                            // Check if this employee has leave on this date from schedule
-                            const scheduleKey = `${empId}_${dateStr}`;
-                            const isLeave = scheduleData && scheduleData[scheduleKey] && scheduleData[scheduleKey].shiftType === 'leave';
-                            
-                            if (isLeave) {
-                                cellClass += ' leave';
-                            } else {
-                                const normalWork = dayRecords.filter(r => r.date === dateStr && r.type === 'normal');
-                                const eveningClaims = dayRecords.filter(r => r.claimDate === dateStr && r.type === 'evening');
-                                const holidayClaims = dayRecords.filter(r => r.claimDate === dateStr && r.type === 'holiday');
-                                
-                                if (normalWork.length > 0) {
-                                    cellClass += ' work-day';
-                                    workDays++;
-                                } else if (eveningClaims.length === 2) {
-                                    cellClass += ' work-day';
-                                    workDays++;
-                                } else if (eveningClaims.length === 1) {
-                                    cellClass += ' warning';
-                                } else if (holidayClaims.length > 0) {
-                                    cellClass += ' work-day';
-                                    workDays++;
-                                }
-                            }
-                        }
-                        
-// ... ก่อนสร้าง cell ในลูป for (let day = 1; day <= daysInMonth; day++) { ...
-let isBooked = false;
-if (claimBookings && typeof claimBookings === "object") {
-  isBooked = Object.values(claimBookings).some(booking =>
-    booking &&
-    booking.employeeId === empId &&
-    String(booking.date) === dateStr
-  );
-}
-let bookedLayer = '';
-if (isBooked) {
-  bookedLayer = `<span class="claim-booked-label">จ</span>`;
-}
-
-// จากเดิมแบบนี้
-// html += `<td class="${cellClass} claim-cell" onclick="showClaimDetails('${empId}', '${dateStr}', ${day})">${cellContent}</td>`;
-
-// เปลี่ยนเป็นแบบนี้!
-html += `<td class="${cellClass} claim-cell" style="position:relative;" onclick="showClaimDetails('${empId}', '${dateStr}', ${day})">${cellContent}${bookedLayer}</td>`;                    }
-                    
-                    html += `<td class="border border-gray-300 p-2 text-center font-bold">${workDays}</td>`;
-                    html += '</tr>';
-                });
-                html += '</tbody></table>';
-                
-                container.innerHTML = html;
-                
-                // Add legend for claim table
-                const legend = document.createElement('div');
-                legend.className = 'mt-4 p-4 bg-gray-50 rounded-lg border';
-                
-                // Create holidays list for this month
-                let holidaysInMonth = '';
-                const monthHolidays = [];
-                
-                for (let day = 1; day <= daysInMonth; day++) {
-                    const dateStr = `${year}-${month.toString().padStart(2, '0')}-${day.toString().padStart(2, '0')}`;
-                    if (holidays && holidays[dateStr]) {
-                        const holidayDate = new Date(year, month - 1, day);
-                        const dayName = ['อาทิตย์', 'จันทร์', 'อังคาร', 'พุธ', 'พฤหัสบดี', 'ศุกร์', 'เสาร์'][holidayDate.getDay()];
-                        monthHolidays.push(`${day} ${dayName} - ${holidays[dateStr]}`);
-                    }
-                }
-                
-                if (monthHolidays.length > 0) {
-                    holidaysInMonth = `
-                        <div class="mt-4">
-                            <h5 class="font-medium text-gray-800 mb-2">วันหยุดในเดือนนี้:</h5>
-                            <ul class="text-sm text-gray-700 space-y-1">
-                                ${monthHolidays.map(holiday => `<li>• ${holiday}</li>`).join('')}
-                            </ul>
-                        </div>
-                    `;
-                }
-                
-                legend.innerHTML = `
-  <h4 class="font-semibold text-gray-800 mb-2">หมายเหตุ:</h4>
-  <div class="flex flex-wrap gap-4 text-sm">
-    <div class="flex items-center gap-2">
-      <span class="w-6 h-6 bg-red-500 rounded"></span>
-      <span>ช่องสีแดง คือ ลา</span>
-    </div>
-    <div class="flex items-center gap-2">
-      <span class="w-6 h-6 bg-emerald-500 rounded"></span>
-      <span>ช่องสีเขียว คือ เบิกได้</span>
-    </div>
-    <div class="flex items-center gap-2">
-      <span class="w-6 h-6 bg-yellow-500 rounded"></span>
-      <span>ช่องสีเหลือง คือ เวรยังไม่ครบ</span>
-    </div>
-    <div class="flex items-center gap-2">
-      <span style="font-size:1.50rem;color:#ef4444;font-weight:bold;" class="inline-block ml-1">สวัสดีจ้าาา2</span>
-      <span>มีการจองวันเบิก</span>
-    </div>
-  </div>
-                    ${holidaysInMonth}
-                `;
-                container.appendChild(legend);
-            } catch (error) {
-                console.error('Error in generateClaimTable:', error);
-                const container = document.getElementById('claim-table');
-                if (container) {
-                    container.innerHTML = '<p class="text-red-500 text-center">เกิดข้อผิดพลาดในการสร้างตาราง</p>';
-                }
+// Claim table management (เวอร์ชันรวม)
+async function generateClaimTable() {
+  try {
+    const monthElement = document.getElementById('claim-month');
+    const yearElement = document.getElementById('claim-year');
+    const container = document.getElementById('claim-table');
+    
+    if (!monthElement || !yearElement || !container) {
+      console.error('Claim table elements not found');
+      return;
+    }
+    
+    const month = parseInt(monthElement.value);
+    const year = parseInt(yearElement.value);
+    
+    if (!month || !year) {
+      container.innerHTML = '<p class="text-red-500 text-center">กรุณาเลือกเดือนและปี</p>';
+      return;
+    }
+    
+    const daysInMonth = new Date(year, month, 0).getDate();
+    
+    // Show loading
+    container.innerHTML = '<div class="text-center py-8"><div class="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-emerald-600"></div><p class="mt-2 text-gray-600">กำลังสร้างตาราง...</p></div>';
+    
+    if (!employees || Object.keys(employees).length === 0) {
+      container.innerHTML = '<p class="text-gray-500 text-center">ยังไม่มีข้อมูลพนักงาน กรุณาเพิ่มพนักงานก่อน</p>';
+      return;
+    }
+    
+    let html = '<table class="min-w-full border-collapse border border-gray-300">';
+    // Header
+    html += '<thead><tr class="bg-emerald-800 text-white">';
+    html += '<th class="border border-gray-300 p-2">ชื่อ-นามสกุล</th>';
+    for (let day = 1; day <= daysInMonth; day++) {
+      const date = new Date(year, month - 1, day);
+      const dayName = ['อา', 'จ', 'อ', 'พ', 'พฤ', 'ศ', 'ส'][date.getDay()];
+      const dateStr = `${year}-${month.toString().padStart(2, '0')}-${day.toString().padStart(2, '0')}`;
+      const dayOfWeek = date.getDay();
+      let headerClass = 'border border-gray-300 p-1 text-xs';
+      if ((holidays && holidays[dateStr]) || dayOfWeek === 0 || dayOfWeek === 6) {
+        headerClass += ' weekend-header';
+      }
+      html += `<th class="${headerClass}">${day}<br>${dayName}</th>`;
+    }
+    html += '<th class="border border-gray-300 p-2">รวม</th>';
+    html += '</tr></thead>';
+    
+    // Body
+    html += '<tbody>';
+    // Load schedule data once
+    const scheduleData = await loadScheduleData();
+    Object.entries(employees).forEach(([empId, emp]) => {
+      if (!emp) return;
+      html += '<tr>';
+      html += `<td class="border border-gray-300 p-2 font-medium text-sm" style="width: 150px; min-width: 150px;">
+        <div>${emp.firstname || ''} ${emp.lastname || ''}</div>
+        <div class="text-xs text-gray-600 mt-1">${emp.phone || ''}</div>
+      </td>`;
+      let workDays = 0;
+      for (let day = 1; day <= daysInMonth; day++) {
+        const date = new Date(year, month - 1, day);
+        const dayOfWeek = date.getDay();
+        const dateStr = `${year}-${month.toString().padStart(2, '0')}-${day.toString().padStart(2, '0')}`;
+        // Check work records for this employee and date
+        const dayRecords = workRecords ? Object.values(workRecords).filter(record => 
+          record && record.employeeId === empId && 
+          (record.date === dateStr || record.claimDate === dateStr)
+        ) : [];
+        let cellClass = 'border border-gray-300 p-1 text-center relative';
+        let cellContent = '';
+        // Add weekend highlighting
+        if (dayOfWeek === 0 || dayOfWeek === 6) cellClass += ' weekend';
+        if (holidays && holidays[dateStr]) {
+          cellClass += ' holiday';
+        } else {
+          // Check if this employee has leave on this date from schedule
+          const scheduleKey = `${empId}_${dateStr}`;
+          const isLeave = scheduleData && scheduleData[scheduleKey] && scheduleData[scheduleKey].shiftType === 'leave';
+          if (isLeave) {
+            cellClass += ' leave';
+          } else {
+            const normalWork = dayRecords.filter(r => r.date === dateStr && r.type === 'normal');
+            const eveningClaims = dayRecords.filter(r => r.claimDate === dateStr && r.type === 'evening');
+            const holidayClaims = dayRecords.filter(r => r.claimDate === dateStr && r.type === 'holiday');
+            if (normalWork.length > 0) {
+              cellClass += ' work-day';
+              workDays++;
+            } else if (eveningClaims.length === 2) {
+              cellClass += ' work-day';
+              workDays++;
+            } else if (eveningClaims.length === 1) {
+              cellClass += ' warning';
+            } else if (holidayClaims.length > 0) {
+              cellClass += ' work-day';
+              workDays++;
             }
+          }
         }
+        // ตรวจสอบจอง
+        let isBooked = false;
+        if (claimBookings && typeof claimBookings === "object") {
+          isBooked = Object.values(claimBookings).some(booking =>
+            booking &&
+            booking.employeeId === empId &&
+            String(booking.date) === dateStr
+          );
+        }
+        let bookedLayer = '';
+        if (isBooked) {
+          bookedLayer = `<span class="claim-booked-label">จ</span>`;
+        }
+        html += `<td class="${cellClass} claim-cell" style="position:relative;" onclick="showClaimDetails('${empId}', '${dateStr}', ${day})">${cellContent}${bookedLayer}</td>`;
+      }
+      html += `<td class="border border-gray-300 p-2 text-center font-bold">${workDays}</td>`;
+      html += '</tr>';
+    });
+    html += '</tbody></table>';
+    container.innerHTML = html;
+    // Add legend for claim table
+    const legend = document.createElement('div');
+    legend.className = 'mt-4 p-4 bg-gray-50 rounded-lg border';
+    // Create holidays list for this month
+    let holidaysInMonth = '';
+    const monthHolidays = [];
+    for (let day = 1; day <= daysInMonth; day++) {
+      const dateStr = `${year}-${month.toString().padStart(2, '0')}-${day.toString().padStart(2, '0')}`;
+      if (holidays && holidays[dateStr]) {
+        const holidayDate = new Date(year, month - 1, day);
+        const dayName = ['อาทิตย์', 'จันทร์', 'อังคาร', 'พุธ', 'พฤหัสบดี', 'ศุกร์', 'เสาร์'][holidayDate.getDay()];
+        monthHolidays.push(`${day} ${dayName} - ${holidays[dateStr]}`);
+      }
+    }
+    if (monthHolidays.length > 0) {
+      holidaysInMonth = `
+        <div class="mt-4">
+          <h5 class="font-medium text-gray-800 mb-2">วันหยุดในเดือนนี้:</h5>
+          <ul class="text-sm text-gray-700 space-y-1">
+            ${monthHolidays.map(holiday => `<li>• ${holiday}</li>`).join('')}
+          </ul>
+        </div>
+      `;
+    }
+    legend.innerHTML = `
+      <h4 class="font-semibold text-gray-800 mb-2">หมายเหตุ:</h4>
+      <div class="flex flex-wrap gap-4 text-sm">
+        <div class="flex items-center gap-2">
+          <span class="w-6 h-6 bg-red-500 rounded"></span>
+          <span>ช่องสีแดง คือ ลา</span>
+        </div>
+        <div class="flex items-center gap-2">
+          <span class="w-6 h-6 bg-emerald-500 rounded"></span>
+          <span>ช่องสีเขียว คือ เบิกได้</span>
+        </div>
+        <div class="flex items-center gap-2">
+          <span class="w-6 h-6 bg-yellow-500 rounded"></span>
+          <span>ช่องสีเหลือง คือ เวรยังไม่ครบ</span>
+        </div>
+        <div class="flex items-center gap-2">
+          <span style="font-size:1.50rem;color:#ef4444;font-weight:bold;" class="inline-block ml-1">จ</span>
+          <span>มีการจองวันเบิก</span>
+        </div>
+      </div>
+      ${holidaysInMonth}
+    `;
+    container.appendChild(legend);
+  } catch (error) {
+    console.error('Error in generateClaimTable:', error);
+    const container = document.getElementById('claim-table');
+    if (container) {
+      container.innerHTML = '<p class="text-red-500 text-center">เกิดข้อผิดพลาดในการสร้างตาราง</p>';
+    }
+  }
+}
 
         // Export functions
         function exportSummary() {
