@@ -770,25 +770,29 @@ document.addEventListener('DOMContentLoaded', () => {
                 document.getElementById('summary-end-date').value = lastDay.toISOString().split('T')[0];
                 
                 // Wait for Firebase to be ready, then load data
-                function waitForFirebase() {
-                    if (window.firebaseReady === true) {
-                        console.log('Firebase ready, loading data...');
-                        loadEmployees().then(() => {
-                            return loadTasks();
-                        }).then(() => {
-                            return loadWorkRecords();
-                        }).then(() => {
-                            return loadHolidays();
-                        }).then(() => {
-                            // Only load summary if we're on the summary tab
-                            if (!document.getElementById('summary-tab').classList.contains('hidden')) {
-                                loadSummary();
-                            }
-                            console.log('All data loaded successfully');
-                        }).catch(error => {
-                            console.error('Background loading error:', error);
-                        });
-                    } else if (window.firebaseReady === false) {
+function waitForFirebase() {
+    if (window.firebaseReady === true) {
+        console.log('Firebase ready, loading data...');
+        loadEmployees().then(() => {
+            return loadTasks();
+        }).then(() => {
+            return loadWorkRecords();
+        }).then(() => {
+            return loadHolidays();
+        }).then(() => {
+            return loadClaimBookings();
+        }).then(() => {
+            // Only load summary if we're on the summary tab
+            if (!document.getElementById('summary-tab').classList.contains('hidden')) {
+                loadSummary();
+            }
+            // เพิ่มบรรทัดนี้:
+            generateClaimTable(); // เพื่อให้ claimBookings พร้อมก่อนวาด
+            console.log('All data loaded successfully');
+        }).catch(error => {
+            console.error('Background loading error:', error);
+        });
+    } else if (window.firebaseReady === false) {
                         console.log('Firebase failed to initialize, using offline mode');
                         // Initialize empty data for offline mode
                         employees = {};
