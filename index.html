@@ -574,6 +574,7 @@ async function deleteClaimBooking(id) {
     generateClaimTable();
   }
 }
+     
 // --- MODIFY generateClaimTable to load and display booking status ---
 async function generateClaimTable() {
   try {
@@ -595,8 +596,7 @@ async function generateClaimTable() {
     if (!employees || Object.keys(employees).length === 0) {
       container.innerHTML = '<p class="text-gray-500 text-center">ยังไม่มีข้อมูลพนักงาน กรุณาเพิ่มพนักงานก่อน</p>';
       return;
-    }
-    await loadClaimBookings(); // <-- โหลดจองวันเบิกก่อน
+    }    await loadClaimBookings(); // <-- โหลดจองวันเบิกก่อน
     let html = '<table class="min-w-full border-collapse border border-gray-300">';
     html += '<thead><tr class="bg-emerald-800 text-white">';
     html += '<th class="border border-gray-300 p-2">ชื่อ-นามสกุล</th>';
@@ -631,7 +631,7 @@ async function generateClaimTable() {
           record && record.employeeId === empId && 
           (record.date === dateStr || record.claimDate === dateStr)
         ) : [];
-        let cellClass = 'border border-gray-300 p-1 text-center';
+        let cellClass = 'border border-gray-300 p-1 text-center relative'; // เพิ่ม relative เพื่อให้จองเป็น absolute
         let cellContent = '';
         if (dayOfWeek === 0 || dayOfWeek === 6) {
           cellClass += ' weekend';
@@ -661,21 +661,24 @@ async function generateClaimTable() {
             }
           }
         }
-        // แสดงสถานะ "จอง"
-const isBooked = Object.values(claimBookings||{}).some(booking =>
-  booking.employeeId === empId && booking.date === dateStr
-);
-if (isBooked) {
-  cellContent += '<span class="inline-block text-xs text-blue-600 ml-1">จอง</span>';
-}
-        html += `<td class="${cellClass} claim-cell" onclick="showClaimDetails('${empId}', '${dateStr}', ${day})">${cellContent}</td>`;
+        // ปรับ "จอง" เป็น absolute layer หลังสุด
+        const isBooked = Object.values(claimBookings||{}).some(booking =>
+          booking.employeeId === empId && booking.date === dateStr
+        );
+        // สร้างเลเยอร์จองเป็น absolute ไม่บังสี
+        let bookedLayer = '';
+        if (isBooked) {
+          bookedLayer = `<span style="position:absolute;bottom:2px;right:2px;z-index:1;font-size:0.75em;color:#2563eb;background:rgba(255,255,255,0.7);padding:0 4px;border-radius:4px;pointer-events:none;">จอง</span>`;
+          // ใช้ z-index:1 (ต่ำกว่าสี cell ที่อาจมี z-index มากกว่า) และ pointer-events:none
+        }
+        html += `<td class="${cellClass} claim-cell" onclick="showClaimDetails('${empId}', '${dateStr}', ${day})" style="position:relative;">${cellContent}${bookedLayer}</td>`;
       }
       html += `<td class="border border-gray-300 p-2 text-center font-bold">${workDays}</td>`;
       html += '</tr>';
     });
     html += '</tbody></table>';
     container.innerHTML = html;
-    // ... (ส่วน legend คงเดิม)
+    // ... (legend เดิม) ...
     const legend = document.createElement('div');
     legend.className = 'mt-4 p-4 bg-gray-50 rounded-lg border';
     let holidaysInMonth = '';
@@ -729,6 +732,7 @@ if (isBooked) {
     }
   }
 }
+     
 // ปิด popup เมื่อคลิกนอก content
 document.addEventListener('click', function(event) {
   const popup = document.getElementById('claim-booking-popup');
