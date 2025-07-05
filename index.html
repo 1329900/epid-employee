@@ -2063,8 +2063,38 @@ document.addEventListener('DOMContentLoaded', () => {
                             }
                         }
                         
-                        html += `<td class="${cellClass} claim-cell" onclick="showClaimDetails('${empId}', '${dateStr}', ${day})">${cellContent}</td>`;
-                    }
+// ... ก่อนสร้าง cell ในลูป for (let day = 1; day <= daysInMonth; day++) { ...
+let isBooked = false;
+if (claimBookings && typeof claimBookings === "object") {
+  isBooked = Object.values(claimBookings).some(booking =>
+    booking &&
+    booking.employeeId === empId &&
+    String(booking.date) === dateStr
+  );
+}
+let bookedLayer = '';
+if (isBooked) {
+  bookedLayer = `<span style="
+    position:absolute;
+    bottom:2px;
+    right:2px;
+    z-index:100;
+    font-size:0.85em;
+    color:#2563eb;
+    background:rgba(255,255,255,0.97);
+    padding:0 6px;
+    border-radius:4px;
+    pointer-events:none;
+    font-weight:bold;
+    box-shadow:0 0 3px #bbb;
+  ">จอง</span>`;
+}
+
+// จากเดิมแบบนี้
+// html += `<td class="${cellClass} claim-cell" onclick="showClaimDetails('${empId}', '${dateStr}', ${day})">${cellContent}</td>`;
+
+// เปลี่ยนเป็นแบบนี้!
+html += `<td class="${cellClass} claim-cell" style="position:relative;" onclick="showClaimDetails('${empId}', '${dateStr}', ${day})">${cellContent}${bookedLayer}</td>`;                    }
                     
                     html += `<td class="border border-gray-300 p-2 text-center font-bold">${workDays}</td>`;
                     html += '</tr>';
