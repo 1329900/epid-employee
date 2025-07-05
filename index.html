@@ -1838,7 +1838,7 @@ function waitForFirebase() {
             updateHolidayList();
         }
 
-// Claim table management (เวอร์ชันปรับปรุงตามที่ขอ)
+// Claim table management (ไม่แสดงคำว่า "วันหยุด" ใน cell วันหยุดที่ไม่มีข้อมูล)
 async function generateClaimTable() {
   try {
     const monthElement = document.getElementById('claim-month');
@@ -1917,7 +1917,6 @@ async function generateClaimTable() {
         ) : [];
         if (isLeave) {
           cellClass += ' leave';
-          // cellContent = 'ล'; // แสดงตัวอักษรถ้าต้องการ
         } else {
           const normalWork = dayRecords.filter(r => r.date === dateStr && r.type === 'normal');
           const eveningClaims = dayRecords.filter(r => r.claimDate === dateStr && r.type === 'evening');
@@ -1933,10 +1932,8 @@ async function generateClaimTable() {
           } else if (holidayClaims.length > 0) {
             cellClass += ' work-day';
             workDays++;
-          } else if (holidays && holidays[dateStr]) {
-            // ไม่มีข้อมูลอะไรเลย เป็นวันหยุดจริง ๆ
-            cellContent = 'วันหยุด';
           }
+          // ถ้าไม่มีข้อมูลใดๆ เลยในวันหยุด จะไม่แสดง cellContent ใดๆ
         }
 
         // ตรวจสอบจอง
