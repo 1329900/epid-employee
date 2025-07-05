@@ -2539,108 +2539,49 @@ html += `<td class="${cellClass} claim-cell" style="position:relative;" onclick=
         }
 
         // Claim popup functions
-        function showClaimDetails(empId, date, day) {
-            const employee = employees[empId];
-            if (!employee) return;
-            
-            const dateStr = date;
-            const displayDate = new Date(date).toLocaleDateString('th-TH');
-            const dayOfWeek = ['อาทิตย์', 'จันทร์', 'อังคาร', 'พุธ', 'พฤหัสบดี', 'ศุกร์', 'เสาร์'][new Date(date).getDay()];
-            
-            // Check if it's a holiday
-// ดึงข้อมูลการเบิก/การทำงานวันนี้
-const dayRecords = workRecords ? Object.values(workRecords).filter(record => 
-    record && record.employeeId === empId && 
-    (record.date === dateStr || record.claimDate === dateStr)
-) : [];
-
-// ถ้ามีข้อมูลการเบิก/ทำงาน ให้แสดงรายละเอียดปกติ (แม้จะเป็นวันหยุด)
-if (dayRecords.length > 0) {
-    // ... (โค้ดเดิมสำหรับแสดงรายละเอียดการเบิก/เวร/ฯลฯ) ...
-    // (ไม่ต้องแก้ส่วนนี้ โค้ดเดิมของคุณใช้ได้แล้ว)
-} else if (holidays && holidays[dateStr]) {
-    // ถ้าไม่มีข้อมูลและเป็นวันหยุด
-    const popupContent = document.getElementById('claim-popup-content');
-    popupContent.innerHTML = `
-        <div class="text-center">
-            <div class="mb-4">
-                <h4 class="text-lg font-semibold text-gray-800">${employee.firstname} ${employee.lastname}</h4>
-                <p class="text-gray-600">${employee.phone}</p>
-            </div>
-            <div class="bg-gray-100 p-4 rounded-lg">
-                <p class="text-lg font-medium">วันที่ ${day} (${dayOfWeek})</p>
-                <p class="text-gray-600">${displayDate}</p>
-                <div class="mt-3 p-3 bg-yellow-100 rounded-lg">
-                    <p class="text-yellow-800 font-medium">วันหยุด: ${holidays[dateStr]}</p>
-                </div>
-            </div>
-        </div>
-    `;
-    document.getElementById('claim-popup').classList.remove('hidden');
-    return;
-} else {
-    // ไม่มีข้อมูลและไม่ใช่วันหยุด
-    // ... (แสดง "ไม่มีการทำงาน") ...
-}
-            
-            // Get work records for this employee and date
-            const dayRecords = workRecords ? Object.values(workRecords).filter(record => 
-                record && record.employeeId === empId && 
-                (record.date === dateStr || record.claimDate === dateStr)
-            ) : [];
-            
-            const normalWork = dayRecords.filter(r => r.date === dateStr && r.type === 'normal');
-            const eveningClaims = dayRecords.filter(r => r.claimDate === dateStr && r.type === 'evening');
-            const holidayClaims = dayRecords.filter(r => r.claimDate === dateStr && r.type === 'holiday');
-            
-            let statusHtml = '';
-            let detailsHtml = '';
-            
-            if (normalWork.length > 0) {
-                statusHtml = '<div class="bg-green-100 p-3 rounded-lg"><p class="text-green-800 font-medium">✓ เบิกได้ - ทำงานปกติ</p></div>';
-                
-                normalWork.forEach(record => {
-                    let tasksHtml = '';
-                    if (record.tasks && Array.isArray(record.tasks) && record.tasks.length > 0) {
-                        tasksHtml = record.tasks.map(task => {
-                            const taskInfo = tasks[task.taskId];
-                            return taskInfo ? `<li>${taskInfo.name}: ${task.amount} ${taskInfo.unit}</li>` : '';
-                        }).filter(t => t).join('');
-                    }
-                    
-                    detailsHtml += `
-                        <div class="border-l-4 border-green-500 pl-4 mb-3">
-                            <p class="font-medium">ทำงานปกติ</p>
-                            ${tasksHtml ? `<ul class="text-sm text-gray-600 mt-1 ml-4">${tasksHtml}</ul>` : ''}
-                            ${record.other ? `<p class="text-sm text-gray-600 mt-1">งานอื่น ๆ : ${record.other}</p>` : ''}
-                        </div>
-                    `;
-                });
-            } else if (eveningClaims.length >= 2) {
-                statusHtml = '<div class="bg-green-100 p-3 rounded-lg"><p class="text-green-800 font-medium">✓ เบิกได้ - เวรเย็น (ครบ 2 วัน)</p></div>';
-                
-                eveningClaims.forEach(record => {
-                    const workDate = new Date(record.date).toLocaleDateString('th-TH');
-                    let tasksHtml = '';
-                    if (record.tasks && Array.isArray(record.tasks) && record.tasks.length > 0) {
-                        tasksHtml = record.tasks.map(task => {
-                            const taskInfo = tasks[task.taskId];
-                            return taskInfo ? `<li>${taskInfo.name}: ${task.amount} ${taskInfo.unit}</li>` : '';
-                        }).filter(t => t).join('');
-                    }
-                    
-                    detailsHtml += `
-                        <div class="border-l-4 border-green-500 pl-4 mb-3">
-                            <p class="font-medium">เวรเย็น - ทำงานวันที่ ${workDate}</p>
-                            ${tasksHtml ? `<ul class="text-sm text-gray-600 mt-1 ml-4">${tasksHtml}</ul>` : ''}
-                            ${record.other ? `<p class="text-sm text-gray-600 mt-1">งานอื่น ๆ : ${record.other}</p>` : ''}
-                        </div>
-                    `;
-                });
-            } else if (eveningClaims.length === 1) {
-                statusHtml = '<div class="bg-yellow-100 p-3 rounded-lg"><p class="text-yellow-800 font-medium">⚠ เวรยังไม่ครบ - ต้องทำ 2 วัน</p></div>';
-                
-                const record = eveningClaims[0];
+function showClaimDetails(empId, date, day) {
+    const employee = employees[empId];
+    if (!employee) return;
+    
+    const dateStr = date;
+    const displayDate = new Date(date).toLocaleDateString('th-TH');
+    const dayOfWeek = ['อาทิตย์', 'จันทร์', 'อังคาร', 'พุธ', 'พฤหัสบดี', 'ศุกร์', 'เสาร์'][new Date(date).getDay()];
+    
+    // ตรวจสอบบันทึกการทำงาน/เบิก
+    const dayRecords = workRecords ? Object.values(workRecords).filter(record => 
+        record && record.employeeId === empId && 
+        (record.date === dateStr || record.claimDate === dateStr)
+    ) : [];
+    
+    let statusHtml = '';
+    let detailsHtml = '';
+    
+    if (dayRecords.length > 0) {
+        const normalWork = dayRecords.filter(r => r.date === dateStr && r.type === 'normal');
+        const eveningClaims = dayRecords.filter(r => r.claimDate === dateStr && r.type === 'evening');
+        const holidayClaims = dayRecords.filter(r => r.claimDate === dateStr && r.type === 'holiday');
+        
+        if (normalWork.length > 0) {
+            statusHtml = '<div class="bg-green-100 p-3 rounded-lg"><p class="text-green-800 font-medium">✓ เบิกได้ - ทำงานปกติ</p></div>';
+            normalWork.forEach(record => {
+                let tasksHtml = '';
+                if (record.tasks && Array.isArray(record.tasks) && record.tasks.length > 0) {
+                    tasksHtml = record.tasks.map(task => {
+                        const taskInfo = tasks[task.taskId];
+                        return taskInfo ? `<li>${taskInfo.name}: ${task.amount} ${taskInfo.unit}</li>` : '';
+                    }).filter(t => t).join('');
+                }
+                detailsHtml += `
+                    <div class="border-l-4 border-green-500 pl-4 mb-3">
+                        <p class="font-medium">ทำงานปกติ</p>
+                        ${tasksHtml ? `<ul class="text-sm text-gray-600 mt-1 ml-4">${tasksHtml}</ul>` : ''}
+                        ${record.other ? `<p class="text-sm text-gray-600 mt-1">งานอื่น ๆ : ${record.other}</p>` : ''}
+                    </div>
+                `;
+            });
+        } else if (eveningClaims.length >= 2) {
+            statusHtml = '<div class="bg-green-100 p-3 rounded-lg"><p class="text-green-800 font-medium">✓ เบิกได้ - เวรเย็น (ครบ 2 วัน)</p></div>';
+            eveningClaims.forEach(record => {
                 const workDate = new Date(record.date).toLocaleDateString('th-TH');
                 let tasksHtml = '';
                 if (record.tasks && Array.isArray(record.tasks) && record.tasks.length > 0) {
@@ -2649,74 +2590,89 @@ if (dayRecords.length > 0) {
                         return taskInfo ? `<li>${taskInfo.name}: ${task.amount} ${taskInfo.unit}</li>` : '';
                     }).filter(t => t).join('');
                 }
-                
                 detailsHtml += `
-                    <div class="border-l-4 border-yellow-500 pl-4 mb-3">
+                    <div class="border-l-4 border-green-500 pl-4 mb-3">
                         <p class="font-medium">เวรเย็น - ทำงานวันที่ ${workDate}</p>
                         ${tasksHtml ? `<ul class="text-sm text-gray-600 mt-1 ml-4">${tasksHtml}</ul>` : ''}
-                        ${record.other ? `<p class="text-sm text-gray-600 mt-1">หมายเหตุ: ${record.other}</p>` : ''}
-                        <p class="text-sm text-yellow-700 mt-2">ต้องทำเวรเย็นอีก 1 วัน เพื่อให้ครบ 2 วัน</p>
+                        ${record.other ? `<p class="text-sm text-gray-600 mt-1">งานอื่น ๆ : ${record.other}</p>` : ''}
                     </div>
                 `;
-            } else if (holidayClaims.length > 0) {
-                statusHtml = '<div class="bg-green-100 p-3 rounded-lg"><p class="text-green-800 font-medium">✓ เบิกได้ - เวรวันหยุด</p></div>';
-                
-                holidayClaims.forEach(record => {
-                    const workDate = new Date(record.date).toLocaleDateString('th-TH');
-                    let tasksHtml = '';
-                    if (record.tasks && Array.isArray(record.tasks) && record.tasks.length > 0) {
-                        tasksHtml = record.tasks.map(task => {
-                            const taskInfo = tasks[task.taskId];
-                            return taskInfo ? `<li>${taskInfo.name}: ${task.amount} ${taskInfo.unit}</li>` : '';
-                        }).filter(t => t).join('');
-                    }
-                    
-                    detailsHtml += `
-                        <div class="border-l-4 border-green-500 pl-4 mb-3">
-                            <p class="font-medium">เวรวันหยุด - ทำงานวันที่ ${workDate}</p>
-                            ${tasksHtml ? `<ul class="text-sm text-gray-600 mt-1 ml-4">${tasksHtml}</ul>` : ''}
-                            ${record.other ? `<p class="text-sm text-gray-600 mt-1">งานอื่น ๆ : ${record.other}</p>` : ''}
-                        </div>
-                    `;
-                });
-            } else {
-                // Check if it's leave from schedule
-                const scheduleData = currentScheduleData.scheduleData || {};
-                const scheduleKey = `${empId}_${dateStr}`;
-                const isLeave = scheduleData[scheduleKey] && scheduleData[scheduleKey].shiftType === 'leave';
-                
-                if (isLeave) {
-                    statusHtml = '<div class="bg-red-100 p-3 rounded-lg"><p class="text-red-800 font-medium">ลา</p></div>';
-                    detailsHtml = '<p class="text-gray-600">ไม่มีการทำงานในวันนี้ (ลา)</p>';
-                } else {
-                    statusHtml = '<div class="bg-gray-100 p-3 rounded-lg"><p class="text-gray-800 font-medium">ไม่มีการทำงาน</p></div>';
-                    detailsHtml = '<p class="text-gray-600">ไม่มีการบันทึกการทำงานในวันนี้</p>';
-                }
+            });
+        } else if (eveningClaims.length === 1) {
+            statusHtml = '<div class="bg-yellow-100 p-3 rounded-lg"><p class="text-yellow-800 font-medium">⚠ เวรยังไม่ครบ - ต้องทำ 2 วัน</p></div>';
+            const record = eveningClaims[0];
+            const workDate = new Date(record.date).toLocaleDateString('th-TH');
+            let tasksHtml = '';
+            if (record.tasks && Array.isArray(record.tasks) && record.tasks.length > 0) {
+                tasksHtml = record.tasks.map(task => {
+                    const taskInfo = tasks[task.taskId];
+                    return taskInfo ? `<li>${taskInfo.name}: ${task.amount} ${taskInfo.unit}</li>` : '';
+                }).filter(t => t).join('');
             }
-            
-            const popupContent = document.getElementById('claim-popup-content');
-            popupContent.innerHTML = `
-                <div>
-                    <div class="mb-4">
-                        <h4 class="text-lg font-semibold text-gray-800">${employee.firstname} ${employee.lastname}</h4>
-                        <p class="text-gray-600">${employee.phone}</p>
-                    </div>
-                    <div class="mb-4">
-                        <p class="text-lg font-medium">วันที่ ${day} (${dayOfWeek})</p>
-                        <p class="text-gray-600">${displayDate}</p>
-                    </div>
-                    <div class="mb-4">
-                        ${statusHtml}
-                    </div>
-                    <div>
-                        <h5 class="font-medium text-gray-800 mb-2">รายละเอียด:</h5>
-                        ${detailsHtml}
-                    </div>
+            detailsHtml += `
+                <div class="border-l-4 border-yellow-500 pl-4 mb-3">
+                    <p class="font-medium">เวรเย็น - ทำงานวันที่ ${workDate}</p>
+                    ${tasksHtml ? `<ul class="text-sm text-gray-600 mt-1 ml-4">${tasksHtml}</ul>` : ''}
+                    ${record.other ? `<p class="text-sm text-gray-600 mt-1">หมายเหตุ: ${record.other}</p>` : ''}
+                    <p class="text-sm text-yellow-700 mt-2">ต้องทำเวรเย็นอีก 1 วัน เพื่อให้ครบ 2 วัน</p>
                 </div>
             `;
-            
-            document.getElementById('claim-popup').classList.remove('hidden');
+        } else if (holidayClaims.length > 0) {
+            statusHtml = '<div class="bg-green-100 p-3 rounded-lg"><p class="text-green-800 font-medium">✓ เบิกได้ - เวรวันหยุด</p></div>';
+            holidayClaims.forEach(record => {
+                const workDate = new Date(record.date).toLocaleDateString('th-TH');
+                let tasksHtml = '';
+                if (record.tasks && Array.isArray(record.tasks) && record.tasks.length > 0) {
+                    tasksHtml = record.tasks.map(task => {
+                        const taskInfo = tasks[task.taskId];
+                        return taskInfo ? `<li>${taskInfo.name}: ${task.amount} ${taskInfo.unit}</li>` : '';
+                    }).filter(t => t).join('');
+                }
+                detailsHtml += `
+                    <div class="border-l-4 border-green-500 pl-4 mb-3">
+                        <p class="font-medium">เวรวันหยุด - ทำงานวันที่ ${workDate}</p>
+                        ${tasksHtml ? `<ul class="text-sm text-gray-600 mt-1 ml-4">${tasksHtml}</ul>` : ''}
+                        ${record.other ? `<p class="text-sm text-gray-600 mt-1">งานอื่น ๆ : ${record.other}</p>` : ''}
+                    </div>
+                `;
+            });
+        } else {
+            // ไม่มีสถานะแต่มี record (กรณีผิดปกติ)
+            statusHtml = '<div class="bg-gray-100 p-3 rounded-lg"><p class="text-gray-800 font-medium">มีการบันทึกแต่ไม่เข้าเงื่อนไข</p></div>';
+            detailsHtml = '<p class="text-gray-600">โปรดตรวจสอบข้อมูล</p>';
         }
+    } else if (holidays && holidays[dateStr]) {
+        // ไม่มีข้อมูล และเป็นวันหยุด
+        statusHtml = '<div class="bg-yellow-100 p-3 rounded-lg"><p class="text-yellow-800 font-medium">วันหยุด: ' + holidays[dateStr] + '</p></div>';
+        detailsHtml = '<p class="text-gray-600">ไม่มีการบันทึกการทำงานในวันนี้</p>';
+    } else {
+        // ไม่มีข้อมูล และไม่ใช่วันหยุด
+        statusHtml = '<div class="bg-gray-100 p-3 rounded-lg"><p class="text-gray-800 font-medium">ไม่มีการทำงาน</p></div>';
+        detailsHtml = '<p class="text-gray-600">ไม่มีการบันทึกการทำงานในวันนี้</p>';
+    }
+
+    const popupContent = document.getElementById('claim-popup-content');
+    popupContent.innerHTML = `
+        <div>
+            <div class="mb-4">
+                <h4 class="text-lg font-semibold text-gray-800">${employee.firstname} ${employee.lastname}</h4>
+                <p class="text-gray-600">${employee.phone}</p>
+            </div>
+            <div class="mb-4">
+                <p class="text-lg font-medium">วันที่ ${day} (${dayOfWeek})</p>
+                <p class="text-gray-600">${displayDate}</p>
+            </div>
+            <div class="mb-4">
+                ${statusHtml}
+            </div>
+            <div>
+                <h5 class="font-medium text-gray-800 mb-2">รายละเอียด:</h5>
+                ${detailsHtml}
+            </div>
+        </div>
+    `;
+    document.getElementById('claim-popup').classList.remove('hidden');
+}
         
         function closeClaimPopup() {
             document.getElementById('claim-popup').classList.add('hidden');
