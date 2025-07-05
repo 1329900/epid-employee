@@ -362,12 +362,10 @@
           <option value="">เลือกพนักงาน</option>
         </select>
       </div>
-      <div>
-        <label class="block mb-1">วันที่จอง (เลือกได้หลายวัน)</label>
-        <input type="date" id="booking-date" class="input-field w-full mb-2">
-        <button type="button" onclick="addBookingDate()" class="btn-primary px-2 py-1 rounded text-sm">เพิ่มวันที่</button>
-        <div id="booking-dates-list" class="mt-2"></div>
-      </div>
+<div>
+  <label class="block mb-1">วันที่จอง</label>
+  <input type="date" id="booking-date" class="input-field w-full" required>
+</div>
       <div>
         <label class="block mb-1">เบิกแทนวันที่ (เช่น 2025-07-01, 2025-07-02)</label>
         <input type="text" id="booking-for-dates" class="input-field w-full" placeholder="คั่นด้วย , หรือเว้นวรรค">
@@ -456,7 +454,7 @@
         let holidays = {};
         let currentScheduleData = {};
 let claimBookings = {};
-let bookingDates = [];
+let bookingDate = "";
 
 async function loadClaimBookings() {
   try {
@@ -473,17 +471,17 @@ function renderClaimBookingList() {
   const m = +document.getElementById('claim-month').value;
   const y = +document.getElementById('claim-year').value;
   Object.entries(claimBookings)
-    .filter(([id, b]) => b.dates.some(d => {
-      const dt = new Date(d);
+    .filter(([id, b]) => {
+      const dt = new Date(b.date);
       return dt.getMonth() + 1 === m && dt.getFullYear() === y;
-    }))
+    })
     .forEach(([id, b]) => {
       const emp = employees[b.employeeId];
       container.innerHTML += `
       <div class="border-b py-2 flex justify-between items-center">
         <div>
           <b>${emp ? emp.firstname + ' ' + emp.lastname : b.employeeId}</b>
-          <div class="text-sm text-gray-700">วันที่จอง: ${b.dates.join(', ')}</div>
+          <div class="text-sm text-gray-700">วันที่จอง: ${b.date}</div>
           ${b.forDates && b.forDates.length > 0 ? `<div class="text-xs text-gray-500">เบิกแทนวันที่: ${b.forDates.join(', ')}</div>` : ''}
         </div>
         <div class="flex gap-2">
@@ -493,6 +491,7 @@ function renderClaimBookingList() {
       </div>`;
     });
 }
+     
 function openClaimBookingPopup() {
   document.getElementById('claim-booking-popup').classList.remove('hidden');
   document.getElementById('booking-employee').innerHTML = '<option value="">เลือกพนักงาน</option>' +
@@ -501,10 +500,8 @@ function openClaimBookingPopup() {
     ).join('');
   document.getElementById('booking-date').value = '';
   document.getElementById('booking-for-dates').value = '';
-  document.getElementById('booking-dates-list').innerHTML = '';
   document.getElementById('editing-booking-id').value = '';
-  bookingDates = [];
-  renderBookingDatesList();
+  bookingDate = "";
   renderClaimBookingList();
 }
 function closeClaimBookingPopup() {
@@ -536,13 +533,14 @@ document.getElementById('claim-booking-form').addEventListener('submit', async f
   const employeeId = document.getElementById('booking-employee').value;
   const forDates = document.getElementById('booking-for-dates').value.trim();
   const id = document.getElementById('editing-booking-id').value;
-  if (!employeeId || bookingDates.length === 0) {
+  bookingDate = document.getElementById('booking-date').value;
+  if (!employeeId || !bookingDate) {
     alert('กรุณาเลือกพนักงานและวันที่จอง');
     return;
   }
   const booking = {
     employeeId,
-    dates: [...bookingDates],
+    date: bookingDate,
     forDates: forDates.split(/,|\s/).map(d => d.trim()).filter(d => d),
     timestamp: Date.now()
   };
@@ -564,8 +562,7 @@ async function editClaimBooking(id) {
   const b = claimBookings[id];
   openClaimBookingPopup();
   document.getElementById('booking-employee').value = b.employeeId;
-  bookingDates = [...b.dates];
-  renderBookingDatesList();
+  document.getElementById('booking-date').value = b.date;
   document.getElementById('booking-for-dates').value = (b.forDates || []).join(', ');
   document.getElementById('editing-booking-id').value = id;
 }
@@ -665,12 +662,12 @@ async function generateClaimTable() {
           }
         }
         // แสดงสถานะ "จอง"
-        const isBooked = Object.values(claimBookings||{}).some(booking =>
-          booking.employeeId === empId && booking.dates.includes(dateStr)
-        );
-        if (isBooked) {
-          cellContent += '<span class="inline-block text-xs text-blue-600 ml-1">จอง</span>';
-        }
+const isBooked = Object.values(claimBookings||{}).some(booking =>
+  booking.employeeId === empId && booking.date === dateStr
+);
+if (isBooked) {
+  cellContent += '<span class="inline-block text-xs text-blue-600 ml-1">จอง</span>';
+}
         html += `<td class="${cellClass} claim-cell" onclick="showClaimDetails('${empId}', '${dateStr}', ${day})">${cellContent}</td>`;
       }
       html += `<td class="border border-gray-300 p-2 text-center font-bold">${workDays}</td>`;
