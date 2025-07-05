@@ -640,37 +640,41 @@ async function generateClaimTable() {
         const date = new Date(year, month - 1, day);
         const dateStr = `${year}-${month.toString().padStart(2, '0')}-${day.toString().padStart(2, '0')}`;
         const dayOfWeek = date.getDay();
+
         let cellClass = 'border border-gray-300 p-1 text-center relative';
         let cellContent = '';
+
+        // ติดป้าย weekend/holiday เพิ่มเติม (แต่ไม่ทับสีหลัก)
         if (dayOfWeek === 0 || dayOfWeek === 6) cellClass += ' weekend';
-        if (holidays && holidays[dateStr]) {
-          cellClass += ' holiday';
+        if (holidays && holidays[dateStr]) cellClass += ' holiday';
+
+        // ตรวจสอบ Leave/เวร/เบิก ทุกวัน (รวมวันหยุด)
+        const scheduleKey = `${empId}_${dateStr}`;
+        const isLeave = scheduleData && scheduleData[scheduleKey] && scheduleData[scheduleKey].shiftType === 'leave';
+        const dayRecords = workRecords ? Object.values(workRecords).filter(record =>
+          record && record.employeeId === empId && (record.date === dateStr || record.claimDate === dateStr)
+        ) : [];
+
+        if (isLeave) {
+          cellClass += ' leave';
         } else {
-          const scheduleKey = `${empId}_${dateStr}`;
-          const isLeave = scheduleData && scheduleData[scheduleKey] && scheduleData[scheduleKey].shiftType === 'leave';
-          const dayRecords = workRecords ? Object.values(workRecords).filter(record =>
-            record && record.employeeId === empId && (record.date === dateStr || record.claimDate === dateStr)
-          ) : [];
-          if (isLeave) {
-            cellClass += ' leave';
-          } else {
-            const normalWork = dayRecords.filter(r => r.date === dateStr && r.type === 'normal');
-            const eveningClaims = dayRecords.filter(r => r.claimDate === dateStr && r.type === 'evening');
-            const holidayClaims = dayRecords.filter(r => r.claimDate === dateStr && r.type === 'holiday');
-            if (normalWork.length > 0) {
-              cellClass += ' work-day';
-              workDays++;
-            } else if (eveningClaims.length === 2) {
-              cellClass += ' work-day';
-              workDays++;
-            } else if (eveningClaims.length === 1) {
-              cellClass += ' warning';
-            } else if (holidayClaims.length > 0) {
-              cellClass += ' work-day';
-              workDays++;
-            }
+          const normalWork = dayRecords.filter(r => r.date === dateStr && r.type === 'normal');
+          const eveningClaims = dayRecords.filter(r => r.claimDate === dateStr && r.type === 'evening');
+          const holidayClaims = dayRecords.filter(r => r.claimDate === dateStr && r.type === 'holiday');
+          if (normalWork.length > 0) {
+            cellClass += ' work-day';
+            workDays++;
+          } else if (eveningClaims.length === 2) {
+            cellClass += ' work-day';
+            workDays++;
+          } else if (eveningClaims.length === 1) {
+            cellClass += ' warning';
+          } else if (holidayClaims.length > 0) {
+            cellClass += ' work-day';
+            workDays++;
           }
         }
+
         // >>>> ตรวจสอบจอง <<<<
         let isBooked = false;
         if (claimBookings && typeof claimBookings === "object") {
@@ -682,7 +686,7 @@ async function generateClaimTable() {
         }
         let bookedLayer = '';
         if (isBooked) {
-          bookedLayer = `<span style="position:absolute;bottom:2px;right:2px;z-index:100;font-size:0.75em;color:#2563eb;background:rgba(255,255,255,0.88);padding:0 4px;border-radius:4px;pointer-events:none;">จอง</span>`;
+          bookedLayer = `<span class="claim-booked-label">จ</span>`;
         }
         html += `<td class="${cellClass} claim-cell" style="position:relative;" onclick="showClaimDetails('${empId}', '${dateStr}', ${day})">${cellContent}${bookedLayer}</td>`;
       }
@@ -695,6 +699,27 @@ async function generateClaimTable() {
     // legend
     const legend = document.createElement('div');
     legend.className = 'mt-4 p-4 bg-gray-50 rounded-lg border';
+    // สร้าง holidays list สำหรับเดือนนี้
+    let holidaysInMonth = '';
+    const monthHolidays = [];
+    for (let day = 1; day <= daysInMonth; day++) {
+      const dateStr = `${year}-${month.toString().padStart(2, '0')}-${day.toString().padStart(2, '0')}`;
+      if (holidays && holidays[dateStr]) {
+        const holidayDate = new Date(year, month - 1, day);
+        const dayName = ['อาทิตย์', 'จันทร์', 'อังคาร', 'พุธ', 'พฤหัสบดี', 'ศุกร์', 'เสาร์'][holidayDate.getDay()];
+        monthHolidays.push(`${day} ${dayName} - ${holidays[dateStr]}`);
+      }
+    }
+    if (monthHolidays.length > 0) {
+      holidaysInMonth = `
+        <div class="mt-4">
+          <h5 class="font-medium text-gray-800 mb-2">วันหยุดในเดือนนี้:</h5>
+          <ul class="text-sm text-gray-700 space-y-1">
+            ${monthHolidays.map(holiday => `<li>• ${holiday}</li>`).join('')}
+          </ul>
+        </div>
+      `;
+    }
     legend.innerHTML = `
       <h4 class="font-semibold text-gray-800 mb-2">หมายเหตุ:</h4>
       <div class="flex flex-wrap gap-4 text-sm">
@@ -711,10 +736,11 @@ async function generateClaimTable() {
           <span>ช่องสีเหลือง คือ เวรยังไม่ครบ</span>
         </div>
         <div class="flex items-center gap-2">
-          <span class="inline-block text-xs text-blue-600 ml-1">จ</span>
+          <span style="font-size:1.50rem;color:#ef4444;font-weight:bold;" class="inline-block ml-1">จ</span>
           <span>มีการจองวันเบิก</span>
         </div>
       </div>
+      ${holidaysInMonth}
     `;
     container.appendChild(legend);
   } catch (error) {
