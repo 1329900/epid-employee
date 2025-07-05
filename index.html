@@ -575,8 +575,7 @@ async function deleteClaimBooking(id) {
   }
 }
      
-// --- MODIFY generateClaimTable to load and display booking status ---
-async function generateClaimTable() {
+// --- MODIFY generateClaimTable to load and display booking status ---async function generateClaimTable() {
   try {
     const monthElement = document.getElementById('claim-month');
     const yearElement = document.getElementById('claim-year');
@@ -596,7 +595,8 @@ async function generateClaimTable() {
     if (!employees || Object.keys(employees).length === 0) {
       container.innerHTML = '<p class="text-gray-500 text-center">ยังไม่มีข้อมูลพนักงาน กรุณาเพิ่มพนักงานก่อน</p>';
       return;
-    }    await loadClaimBookings(); // <-- โหลดจองวันเบิกก่อน
+    }
+    await loadClaimBookings();
     let html = '<table class="min-w-full border-collapse border border-gray-300">';
     html += '<thead><tr class="bg-emerald-800 text-white">';
     html += '<th class="border border-gray-300 p-2">ชื่อ-นามสกุล</th>';
@@ -612,67 +612,68 @@ async function generateClaimTable() {
       html += `<th class="${headerClass}">${day}<br>${dayName}</th>`;
     }
     html += '<th class="border border-gray-300 p-2">รวม</th>';
-    html += '</tr></thead>';
-    html += '<tbody>';
+    html += '</tr></thead><tbody>';
     const scheduleData = await loadScheduleData();
     Object.entries(employees).forEach(([empId, emp]) => {
       if (!emp) return;
       html += '<tr>';
       html += `<td class="border border-gray-300 p-2 font-medium text-sm" style="width: 150px; min-width: 150px;">
-          <div>${emp.firstname || ''} ${emp.lastname || ''}</div>
-          <div class="text-xs text-gray-600 mt-1">${emp.phone || ''}</div>
+        <div>${emp.firstname || ''} ${emp.lastname || ''}</div>
+        <div class="text-xs text-gray-600 mt-1">${emp.phone || ''}</div>
       </td>`;
       let workDays = 0;
       for (let day = 1; day <= daysInMonth; day++) {
         const date = new Date(year, month - 1, day);
         const dayOfWeek = date.getDay();
         const dateStr = `${year}-${month.toString().padStart(2, '0')}-${day.toString().padStart(2, '0')}`;
-        const dayRecords = workRecords ? Object.values(workRecords).filter(record => 
-          record && record.employeeId === empId && 
+        const dayRecords = workRecords ? Object.values(workRecords).filter(record =>
+          record && record.employeeId === empId &&
           (record.date === dateStr || record.claimDate === dateStr)
-        ) : [];// ... ภายใน for (let day = 1; day <= daysInMonth; day++) { ... 
-let cellClass = 'border border-gray-300 p-1 text-center relative'; // เพิ่ม relative
+        ) : [];
+        let cellClass = 'border border-gray-300 p-1 text-center relative'; // <-- relative
+        let cellContent = '';
+        if (dayOfWeek === 0 || dayOfWeek === 6) cellClass += ' weekend';
+        if (holidays && holidays[dateStr]) {
+          cellClass += ' holiday';
+        } else {
+          const scheduleKey = `${empId}_${dateStr}`;
+          const isLeave = scheduleData && scheduleData[scheduleKey] && scheduleData[scheduleKey].shiftType === 'leave';
+          if (isLeave) {
+            cellClass += ' leave';
+          } else {
+            const normalWork = dayRecords.filter(r => r.date === dateStr && r.type === 'normal');
+            const eveningClaims = dayRecords.filter(r => r.claimDate === dateStr && r.type === 'evening');
+            const holidayClaims = dayRecords.filter(r => r.claimDate === dateStr && r.type === 'holiday');
+            if (normalWork.length > 0) {
+              cellClass += ' work-day';
+              workDays++;
+            } else if (eveningClaims.length === 2) {
+              cellClass += ' work-day';
+              workDays++;
+            } else if (eveningClaims.length === 1) {
+              cellClass += ' warning';
+            } else if (holidayClaims.length > 0) {
+              cellClass += ' work-day';
+              workDays++;
+            }
+          }
+        }
+        // **** เช็คจอง และแสดงจอง ****
+        let isBooked = false;
+        // ถ้า claimBookings เป็นแบบ object {id: {employeeId, date, ...}}
+        isBooked = Object.values(claimBookings || {}).some(booking =>
+          booking && booking.employeeId === empId && booking.date === dateStr
+        );
+        // ถ้า claimBookings เป็น array [{employeeId, date, ...}] ให้เปลี่ยน Object.values(claimBookings || {}) เป็น claimBookings || []
+        // let isBooked = (claimBookings||[]).some(booking => booking.employeeId === empId && booking.date === dateStr);
 
-let cellContent = '';
-if (dayOfWeek === 0 || dayOfWeek === 6) cellClass += ' weekend';
-if (holidays && holidays[dateStr]) {
-  cellClass += ' holiday';
-} else {
-  const scheduleKey = `${empId}_${dateStr}`;
-  const isLeave = scheduleData && scheduleData[scheduleKey] && scheduleData[scheduleKey].shiftType === 'leave';
-  if (isLeave) {
-    cellClass += ' leave';
-  } else {
-    const normalWork = dayRecords.filter(r => r.date === dateStr && r.type === 'normal');
-    const eveningClaims = dayRecords.filter(r => r.claimDate === dateStr && r.type === 'evening');
-    const holidayClaims = dayRecords.filter(r => r.claimDate === dateStr && r.type === 'holiday');
-    if (normalWork.length > 0) {
-      cellClass += ' work-day';
-      workDays++;
-    } else if (eveningClaims.length === 2) {
-      cellClass += ' work-day';
-      workDays++;
-    } else if (eveningClaims.length === 1) {
-      cellClass += ' warning';
-    } else if (holidayClaims.length > 0) {
-      cellClass += ' work-day';
-      workDays++;
-    }
-  }
-}
-
-// ** เช็คจอง **
-const isBooked = Object.values(claimBookings||{}).some(booking =>
-  booking.employeeId === empId && booking.date === dateStr
-);
-
-// ** จองเป็น absolute layer ด้านล่าง **
-let bookedLayer = '';
-if (isBooked) {
-  bookedLayer = `<span style="position:absolute;bottom:2px;right:2px;z-index:2;font-size:0.75em;color:#2563eb;background:rgba(255,255,255,0.7);padding:0 4px;border-radius:4px;pointer-events:none;">จอง</span>`;
-}
-
-html += `<td class="${cellClass} claim-cell" onclick="showClaimDetails('${empId}', '${dateStr}', ${day})" style="position:relative;">${cellContent}${bookedLayer}</td>`;
+        let bookedLayer = '';
+        // <<<<<<<<<<<  สำคัญ!  >>>>>>>>>>>>
+        if (isBooked) {
+          bookedLayer = `<span style="position:absolute;bottom:2px;right:2px;z-index:10;font-size:0.75em;color:#2563eb;
+            background:rgba(255,255,255,0.85);padding:0 4px;border-radius:4px;pointer-events:none;">จอง</span>`;
+        }
+        html += `<td class="${cellClass} claim-cell" onclick="showClaimDetails('${empId}', '${dateStr}', ${day})" style="position:relative;">${cellContent}${bookedLayer}</td>`;
       }
       html += `<td class="border border-gray-300 p-2 text-center font-bold">${workDays}</td>`;
       html += '</tr>';
