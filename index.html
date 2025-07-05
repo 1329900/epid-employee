@@ -1,3 +1,4 @@
+
  
 
 
@@ -2538,52 +2539,35 @@ html += `<td class="${cellClass} claim-cell" style="position:relative;" onclick=
         }
 
         // Claim popup functions
-function showClaimDetails(empId, date, day) {
-    const employee = employees[empId];
-    if (!employee) return;
-    
-    const dateStr = date;
-    const displayDate = new Date(date).toLocaleDateString('th-TH');
-    const dayOfWeek = ['อาทิตย์', 'จันทร์', 'อังคาร', 'พุธ', 'พฤหัสบดี', 'ศุกร์', 'เสาร์'][new Date(date).getDay()];
-    
-    // ตรวจสอบบันทึกการทำงาน/เบิก
-    const dayRecords = workRecords ? Object.values(workRecords).filter(record => 
-        record && record.employeeId === empId && 
-        (record.date === dateStr || record.claimDate === dateStr)
-    ) : [];
-    
-    if (dayRecords.length > 0) {
-        // ... (โค้ดเดิมสำหรับแสดงรายละเอียดการเบิก/ทำงาน)
-        // (นำโค้ดส่วน statusHtml, detailsHtml, etc. มาไว้ตรงนี้)
-        // ****
-        // (copy ส่วนเดิมที่อยู่หลัง if (normalWork.length > 0) ... else if ... )
-        // ****
-        // แล้วเปิด popup ตามปกติ
-    } else if (holidays && holidays[dateStr]) {
-        // ถ้าไม่มี record และเป็นวันหยุด
-        const popupContent = document.getElementById('claim-popup-content');
-        popupContent.innerHTML = `
-            <div class="text-center">
-                <div class="mb-4">
-                    <h4 class="text-lg font-semibold text-gray-800">${employee.firstname} ${employee.lastname}</h4>
-                    <p class="text-gray-600">${employee.phone}</p>
-                </div>
-                <div class="bg-gray-100 p-4 rounded-lg">
-                    <p class="text-lg font-medium">วันที่ ${day} (${dayOfWeek})</p>
-                    <p class="text-gray-600">${displayDate}</p>
-                    <div class="mt-3 p-3 bg-yellow-100 rounded-lg">
-                        <p class="text-yellow-800 font-medium">วันหยุด: ${holidays[dateStr]}</p>
+        function showClaimDetails(empId, date, day) {
+            const employee = employees[empId];
+            if (!employee) return;
+            
+            const dateStr = date;
+            const displayDate = new Date(date).toLocaleDateString('th-TH');
+            const dayOfWeek = ['อาทิตย์', 'จันทร์', 'อังคาร', 'พุธ', 'พฤหัสบดี', 'ศุกร์', 'เสาร์'][new Date(date).getDay()];
+            
+            // Check if it's a holiday
+            if (holidays && holidays[dateStr]) {
+                const popupContent = document.getElementById('claim-popup-content');
+                popupContent.innerHTML = `
+                    <div class="text-center">
+                        <div class="mb-4">
+                            <h4 class="text-lg font-semibold text-gray-800">${employee.firstname} ${employee.lastname}</h4>
+                            <p class="text-gray-600">${employee.phone}</p>
+                        </div>
+                        <div class="bg-gray-100 p-4 rounded-lg">
+                            <p class="text-lg font-medium">วันที่ ${day} (${dayOfWeek})</p>
+                            <p class="text-gray-600">${displayDate}</p>
+                            <div class="mt-3 p-3 bg-yellow-100 rounded-lg">
+                                <p class="text-yellow-800 font-medium">วันหยุด: ${holidays[dateStr]}</p>
+                            </div>
+                        </div>
                     </div>
-                </div>
-            </div>
-        `;
-        document.getElementById('claim-popup').classList.remove('hidden');
-        return;
-    } else {
-        // ไม่มี record ไม่ใช่วันหยุด
-        // ... (แสดง "ไม่มีการทำงาน")
-    }
-}
+                `;
+                document.getElementById('claim-popup').classList.remove('hidden');
+                return;
+            }
             
             // Get work records for this employee and date
             const dayRecords = workRecords ? Object.values(workRecords).filter(record => 
