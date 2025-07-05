@@ -91,6 +91,24 @@
             overflow-y: auto; 
             box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04); 
         }
+      .claim-booked-label {
+          position: absolute;
+          bottom: 2px;
+          right: 2px;
+          z-index: 100;
+          color: #ef4444;
+          background: transparent;
+          pointer-events: none;
+          font-weight: bold;
+          font-size: clamp(0.6em, 2vw, 1em); /* ปรับขนาดอักษรอัตโนมัติ */
+          line-height: 1;
+          padding: 0 4px;
+          border-radius: 0;
+          display: inline-block;
+          white-space: nowrap;
+          text-shadow: 0 0 2px #fff, 0 1px 2px #fff;
+        }
+        .claim-cell { position: relative; }
     </style>
 </head>
 <body class="bg-gray-100 min-h-screen">
@@ -2078,19 +2096,7 @@ if (claimBookings && typeof claimBookings === "object") {
 }
 let bookedLayer = '';
 if (isBooked) {
-  bookedLayer = `<span style="
-    position:absolute;
-    bottom:2px;
-    right:2px;
-    z-index:100;
-    font-size:0.50em;
-    color:#ef4444; /* สีแดง tailwind */
-    background:transparent;
-    padding:0 6px;
-    border-radius:0;
-    pointer-events:none;
-    font-weight:bold;
-  ">จอง</span>`;
+  bookedLayer = `<span class="claim-booked-label">จอง</span>`;
 }
 
 // จากเดิมแบบนี้
