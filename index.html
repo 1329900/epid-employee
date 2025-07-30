@@ -2340,16 +2340,20 @@ async function generateClaimTable() {
                     let cellValue = '';
                     
                     if (normalWork.length > 0) {
+                        cellClass += ' bg-emerald-500';  // สีเขียวสำหรับวันทำงานปกติ
                         cellValue = `ทำงานปกติ (${dateStr})`;
                         workDays++;
                     } else if (eveningClaims.length >= 2) {
+                        cellClass += ' bg-pink-500';  // สีชมพูสำหรับเวรเย็นครบ 2 วัน
                         const workDates = eveningClaims.map(r => r.date).join(', ');
                         cellValue = `เบิกเวรเย็น (ทำงาน: ${workDates})`;
                         workDays++;
                     } else if (eveningClaims.length === 1) {
+                        cellClass += ' bg-yellow-500';  // สีเหลืองสำหรับเวรเย็นยังไม่ครบ
                         const workDate = eveningClaims[0].date;
                         cellValue = `เบิกเวรเย็น 1 วัน (ทำงาน: ${workDate}) - ไม่ครบ`;
                     } else if (holidayClaims.length > 0) {
+                        cellClass += ' bg-pink-500';  // สีชมพูสำหรับเบิกวันหยุด
                         const workDates = holidayClaims.map(r => r.date).join(', ');
                         cellValue = `เบิกเวรวันหยุด (ทำงาน: ${workDates})`;
                         workDays++;
