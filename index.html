@@ -1925,6 +1925,7 @@ async function generateClaimTable() {
         // Add weekend/holiday color
         const isWeekend = dayOfWeek === 0 || dayOfWeek === 6;
         const isHoliday = holidays && holidays[dateStr];
+        const isWorkingDay = !(isWeekend || isHoliday);
         if (isWeekend) cellClass += ' weekend';
         if (isHoliday) cellClass += ' holiday';
 
