@@ -1902,7 +1902,9 @@ async function generateClaimTable() {
         const dateStr = `${year}-${month.toString().padStart(2, '0')}-${day.toString().padStart(2, '0')}`;
         let cellClass = 'border border-gray-300 p-1 text-center relative';
         let cellContent = '';
-        // Add weekend/holiday color
+        let customClass = '';  // สร้างตัวแปรใหม่สำหรับเก็บ class สี
+        
+        // Add weekend/holiday color (base layer)
         if (dayOfWeek === 0 || dayOfWeek === 6) cellClass += ' weekend';
         if (holidays && holidays[dateStr]) cellClass += ' holiday';
 
@@ -1947,6 +1949,8 @@ async function generateClaimTable() {
         if (isBooked) {
           bookedLayer = `<span class="claim-booked-label">จ</span>`;
         }
+        // เพิ่ม customClass เป็นลำดับสุดท้าย เพื่อให้ทับ class อื่นๆ
+        cellClass = cellClass + customClass;
         html += `<td class="${cellClass} claim-cell" style="position:relative;" onclick="showClaimDetails('${empId}', '${dateStr}', ${day})">${cellContent}${bookedLayer}</td>`;
       }
       let normalClaimDays = 0;
@@ -2340,20 +2344,20 @@ async function generateClaimTable() {
                     let cellValue = '';
                     
                     if (normalWork.length > 0) {
-                        cellClass += ' bg-emerald-500';  // สีเขียวสำหรับวันทำงานปกติ
+                        customClass = ' bg-emerald-500';  // สีเขียวสำหรับวันทำงานปกติ
                         cellValue = `ทำงานปกติ (${dateStr})`;
                         workDays++;
                     } else if (eveningClaims.length >= 2) {
-                        cellClass += ' bg-pink-500';  // สีชมพูสำหรับเวรเย็นครบ 2 วัน
+                        customClass = ' bg-pink-500';  // สีชมพูสำหรับเวรเย็นครบ 2 วัน
                         const workDates = eveningClaims.map(r => r.date).join(', ');
                         cellValue = `เบิกเวรเย็น (ทำงาน: ${workDates})`;
                         workDays++;
                     } else if (eveningClaims.length === 1) {
-                        cellClass += ' bg-yellow-500';  // สีเหลืองสำหรับเวรเย็นยังไม่ครบ
+                        customClass = ' bg-yellow-500';  // สีเหลืองสำหรับเวรเย็นยังไม่ครบ
                         const workDate = eveningClaims[0].date;
                         cellValue = `เบิกเวรเย็น 1 วัน (ทำงาน: ${workDate}) - ไม่ครบ`;
                     } else if (holidayClaims.length > 0) {
-                        cellClass += ' bg-pink-500';  // สีชมพูสำหรับเบิกวันหยุด
+                        customClass = ' bg-pink-500';  // สีชมพูสำหรับเบิกวันหยุด
                         const workDates = holidayClaims.map(r => r.date).join(', ');
                         cellValue = `เบิกเวรวันหยุด (ทำงาน: ${workDates})`;
                         workDays++;
