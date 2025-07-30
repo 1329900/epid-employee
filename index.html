@@ -1884,6 +1884,26 @@ async function generateClaimTable() {
     html += '<th class="border border-gray-300 p-2">รวม</th>';
     html += '</tr></thead>';
     
+    // เพิ่ม style สำหรับสีชมพู
+    const style = document.createElement('style');
+    style.textContent = `
+      .holiday-claim {
+        background-color: #fbcfe8 !important;
+        color: #831843;
+      }
+    `;
+    document.head.appendChild(style);
+
+    // เพิ่ม style สำหรับสีชมพูสำหรับการเบิกในวันหยุด
+    const holidayClaimStyle = document.createElement('style');
+    holidayClaimStyle.textContent = `
+      .holiday-claim {
+        background-color: #fbcfe8 !important;
+        color: #831843;
+      }
+    `;
+    document.head.appendChild(holidayClaimStyle);
+
     // Body
     html += '<tbody>';
     // Load schedule data once
@@ -1902,11 +1922,11 @@ async function generateClaimTable() {
         const dateStr = `${year}-${month.toString().padStart(2, '0')}-${day.toString().padStart(2, '0')}`;
         let cellClass = 'border border-gray-300 p-1 text-center relative';
         let cellContent = '';
-        let customClass = '';  // สร้างตัวแปรใหม่สำหรับเก็บ class สี
-        
-        // Add weekend/holiday color (base layer)
-        if (dayOfWeek === 0 || dayOfWeek === 6) cellClass += ' weekend';
-        if (holidays && holidays[dateStr]) cellClass += ' holiday';
+        // Add weekend/holiday color
+        const isWeekend = dayOfWeek === 0 || dayOfWeek === 6;
+        const isHoliday = holidays && holidays[dateStr];
+        if (isWeekend) cellClass += ' weekend';
+        if (isHoliday) cellClass += ' holiday';
 
         // --- ตรวจสอบสถานะการลา/เบิก/เวรยังไม่ครบ แม้จะเป็นวันหยุด ---
         const scheduleKey = `${empId}_${dateStr}`;
@@ -1949,8 +1969,6 @@ async function generateClaimTable() {
         if (isBooked) {
           bookedLayer = `<span class="claim-booked-label">จ</span>`;
         }
-        // เพิ่ม customClass เป็นลำดับสุดท้าย เพื่อให้ทับ class อื่นๆ
-        cellClass = cellClass + customClass;
         html += `<td class="${cellClass} claim-cell" style="position:relative;" onclick="showClaimDetails('${empId}', '${dateStr}', ${day})">${cellContent}${bookedLayer}</td>`;
       }
       let normalClaimDays = 0;
@@ -2026,11 +2044,7 @@ async function generateClaimTable() {
         </div>
         <div class="flex items-center gap-2">
           <span class="w-6 h-6 bg-emerald-500 rounded"></span>
-          <span>ช่องสีเขียว คือ เบิกได้ (วันทำงานปกติ)</span>
-        </div>
-        <div class="flex items-center gap-2">
-          <span class="w-6 h-6 bg-pink-500 rounded"></span>
-          <span>ช่องสีชมพู คือ เบิกได้ (เวรเย็น/วันหยุด)</span>
+          <span>ช่องสีเขียว คือ เบิกได้</span>
         </div>
         <div class="flex items-center gap-2">
           <span class="w-6 h-6 bg-yellow-500 rounded"></span>
@@ -2344,20 +2358,16 @@ async function generateClaimTable() {
                     let cellValue = '';
                     
                     if (normalWork.length > 0) {
-                        customClass = ' bg-emerald-500';  // สีเขียวสำหรับวันทำงานปกติ
                         cellValue = `ทำงานปกติ (${dateStr})`;
                         workDays++;
                     } else if (eveningClaims.length >= 2) {
-                        customClass = ' bg-pink-500';  // สีชมพูสำหรับเวรเย็นครบ 2 วัน
                         const workDates = eveningClaims.map(r => r.date).join(', ');
                         cellValue = `เบิกเวรเย็น (ทำงาน: ${workDates})`;
                         workDays++;
                     } else if (eveningClaims.length === 1) {
-                        customClass = ' bg-yellow-500';  // สีเหลืองสำหรับเวรเย็นยังไม่ครบ
                         const workDate = eveningClaims[0].date;
                         cellValue = `เบิกเวรเย็น 1 วัน (ทำงาน: ${workDate}) - ไม่ครบ`;
                     } else if (holidayClaims.length > 0) {
-                        customClass = ' bg-pink-500';  // สีชมพูสำหรับเบิกวันหยุด
                         const workDates = holidayClaims.map(r => r.date).join(', ');
                         cellValue = `เบิกเวรวันหยุด (ทำงาน: ${workDates})`;
                         workDays++;
