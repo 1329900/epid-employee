@@ -1,8 +1,4 @@
 
-
- 
-
-
 <!DOCTYPE html>
 <html lang="th">
 <head>
@@ -1884,6 +1880,8 @@ async function generateClaimTable() {
       html += `<th class="${headerClass}">${day}<br>${dayName}</th>`;
     }
     html += '<th class="border border-gray-300 p-2">รวม</th>';
+    html += '<th class="border border-gray-300 p-2">เบิกปกติ</th>';
+    html += '<th class="border border-gray-300 p-2">เบิกพิเศษ</th>';
     html += '</tr></thead>';
     
     // Body
@@ -1951,7 +1949,34 @@ async function generateClaimTable() {
         }
         html += `<td class="${cellClass} claim-cell" style="position:relative;" onclick="showClaimDetails('${empId}', '${dateStr}', ${day})">${cellContent}${bookedLayer}</td>`;
       }
+      let normalClaimDays = 0;
+      let specialClaimDays = 0;
+      
+      // คำนวณจำนวนวันเบิกแต่ละประเภท
+      for (let day = 1; day <= daysInMonth; day++) {
+        const dateStr = `${year}-${month.toString().padStart(2, '0')}-${day.toString().padStart(2, '0')}`;
+        const dayOfWeek = new Date(year, month - 1, day).getDay();
+        const isHoliday = (holidays && holidays[dateStr]) || dayOfWeek === 0 || dayOfWeek === 6;
+        
+        const dayRecords = Object.values(workRecords || {}).filter(record => 
+          record.employeeId === empId && record.claimDate === dateStr
+        );
+        
+        const normalWork = dayRecords.filter(r => r.type === 'normal');
+        const eveningClaims = dayRecords.filter(r => r.type === 'evening');
+        const holidayClaims = dayRecords.filter(r => r.type === 'holiday');
+        
+        if (normalWork.length > 0 || (eveningClaims.length >= 2)) {
+          normalClaimDays++;
+        }
+        if (holidayClaims.length > 0) {
+          specialClaimDays++;
+        }
+      }
+      
       html += `<td class="border border-gray-300 p-2 text-center font-bold">${workDays}</td>`;
+      html += `<td class="border border-gray-300 p-2 text-center font-bold">${normalClaimDays}</td>`;
+      html += `<td class="border border-gray-300 p-2 text-center font-bold">${specialClaimDays}</td>`;
       html += '</tr>';
     });
     html += '</tbody></table>';
