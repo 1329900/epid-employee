@@ -1958,19 +1958,27 @@ async function generateClaimTable() {
         const dayOfWeek = new Date(year, month - 1, day).getDay();
         const isHoliday = (holidays && holidays[dateStr]) || dayOfWeek === 0 || dayOfWeek === 6;
         
-        const dayRecords = Object.values(workRecords || {}).filter(record => 
-          record.employeeId === empId && record.claimDate === dateStr
-        );
+        // ตรวจสอบการทำงานและการเบิก
+        const dayRecords = workRecords ? Object.values(workRecords).filter(record => 
+          record.employeeId === empId && 
+          (record.date === dateStr || record.claimDate === dateStr)
+        ) : [];
         
-        const normalWork = dayRecords.filter(r => r.type === 'normal');
-        const eveningClaims = dayRecords.filter(r => r.type === 'evening');
-        const holidayClaims = dayRecords.filter(r => r.type === 'holiday');
+        const normalWork = dayRecords.filter(r => r.date === dateStr && r.type === 'normal');
+        const eveningClaims = dayRecords.filter(r => r.claimDate === dateStr && r.type === 'evening');
+        const holidayClaims = dayRecords.filter(r => r.claimDate === dateStr && r.type === 'holiday');
         
-        if (normalWork.length > 0 || (eveningClaims.length >= 2)) {
-          normalClaimDays++;
-        }
-        if (holidayClaims.length > 0) {
-          specialClaimDays++;
+        // เช็คว่าวันนี้เบิกได้หรือไม่ (สีเขียว)
+        const canClaim = normalWork.length > 0 || eveningClaims.length >= 2 || holidayClaims.length > 0;
+        
+        if (canClaim) {
+          if (isHoliday) {
+            // ถ้าเป็นวันหยุด (เสาร์-อาทิตย์ หรือวันหยุดพิเศษ) และเบิกได้ นับเป็นเบิกพิเศษ
+            specialClaimDays++;
+          } else {
+            // ถ้าเป็นวันทำงานปกติ (จันทร์-ศุกร์ ที่ไม่ใช่วันหยุด) และเบิกได้ นับเป็นเบิกปกติ
+            normalClaimDays++;
+          }
         }
       }
       
