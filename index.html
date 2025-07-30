@@ -1914,11 +1914,23 @@ async function generateClaimTable() {
           (record.date === dateStr || record.claimDate === dateStr)
         ) : [];
         if (isLeave) {
-          cellClass += ' leave';
+          cellClass += ' bg-red-500 text-white'; // สีแดง สำหรับวันลา
+          cellContent = 'ล';
         } else {
           const normalWork = dayRecords.filter(r => r.date === dateStr && r.type === 'normal');
           const eveningClaims = dayRecords.filter(r => r.claimDate === dateStr && r.type === 'evening');
           const holidayClaims = dayRecords.filter(r => r.claimDate === dateStr && r.type === 'holiday');
+
+          if (normalWork.length > 0) {
+            cellClass += ' bg-emerald-500 text-white'; // สีเขียว สำหรับวันทำงานปกติ
+            cellContent = 'ป';
+          } else if (eveningClaims.length >= 2 || holidayClaims.length > 0) {
+            cellClass += ' bg-pink-500 text-white'; // สีชมพู สำหรับเบิกเวรเย็นครบ 2 วันหรือเบิกวันหยุด
+            cellContent = eveningClaims.length >= 2 ? 'ย' : 'ห';
+          } else if (eveningClaims.length === 1) {
+            cellClass += ' bg-yellow-500 text-white'; // สีเหลือง สำหรับเวรยังไม่ครบ
+            cellContent = 'ย';
+          }
           if (normalWork.length > 0) {
             cellClass += ' work-day';
             workDays++;
@@ -2022,7 +2034,11 @@ async function generateClaimTable() {
         </div>
         <div class="flex items-center gap-2">
           <span class="w-6 h-6 bg-emerald-500 rounded"></span>
-          <span>ช่องสีเขียว คือ เบิกได้</span>
+          <span>ช่องสีเขียว คือ ทำงานปกติ</span>
+        </div>
+        <div class="flex items-center gap-2">
+          <span class="w-6 h-6 bg-pink-500 rounded"></span>
+          <span>ช่องสีชมพู คือ เบิกเวรเย็น/วันหยุด</span>
         </div>
         <div class="flex items-center gap-2">
           <span class="w-6 h-6 bg-yellow-500 rounded"></span>
