@@ -67,7 +67,6 @@
         .warning { background-color: #fbbf24 !important; color: white; }
         .claim-cell { cursor: pointer; }
         .claim-cell:hover { background-color: rgba(0, 0, 0, 0.05); }
-        .claim-cell.holiday-claim { background-color: #fbcfe8 !important; }
         .popup-overlay { 
             position: fixed; 
             top: 0; 
@@ -1969,16 +1968,18 @@ async function generateClaimTable() {
         const eveningClaims = dayRecords.filter(r => r.claimDate === dateStr && r.type === 'evening');
         const holidayClaims = dayRecords.filter(r => r.claimDate === dateStr && r.type === 'holiday');
         
-        // เช็คว่าวันนี้เบิกได้หรือไม่ (สีเขียว)
+        // เช็คว่าวันนี้เบิกได้หรือไม่
         const canClaim = normalWork.length > 0 || eveningClaims.length >= 2 || holidayClaims.length > 0;
         
         if (canClaim) {
           if (isHoliday) {
             // ถ้าเป็นวันหยุด (เสาร์-อาทิตย์ หรือวันหยุดพิเศษ) และเบิกได้ นับเป็นเบิกพิเศษ
             specialClaimDays++;
+            cellClass += ' bg-pink-500 text-white'; // เปลี่ยนเป็นสีชมพูสำหรับวันหยุด
           } else {
             // ถ้าเป็นวันทำงานปกติ (จันทร์-ศุกร์ ที่ไม่ใช่วันหยุด) และเบิกได้ นับเป็นเบิกปกติ
             normalClaimDays++;
+            cellClass += ' bg-emerald-500 text-white'; // คงสีเขียวสำหรับวันทำงานปกติ
           }
         }
       }
@@ -2023,7 +2024,11 @@ async function generateClaimTable() {
         </div>
         <div class="flex items-center gap-2">
           <span class="w-6 h-6 bg-emerald-500 rounded"></span>
-          <span>ช่องสีเขียว คือ เบิกได้</span>
+          <span>ช่องสีเขียว คือ เบิกได้ (วันทำงานปกติ)</span>
+        </div>
+        <div class="flex items-center gap-2">
+          <span class="w-6 h-6 bg-pink-500 rounded"></span>
+          <span>ช่องสีชมพู คือ เบิกได้ (วันหยุด)</span>
         </div>
         <div class="flex items-center gap-2">
           <span class="w-6 h-6 bg-yellow-500 rounded"></span>
