@@ -1884,26 +1884,6 @@ async function generateClaimTable() {
     html += '<th class="border border-gray-300 p-2">รวม</th>';
     html += '</tr></thead>';
     
-    // เพิ่ม style สำหรับสีชมพู
-    const style = document.createElement('style');
-    style.textContent = `
-      .holiday-claim {
-        background-color: #fbcfe8 !important;
-        color: #831843;
-      }
-    `;
-    document.head.appendChild(style);
-
-    // เพิ่ม style สำหรับสีชมพูสำหรับการเบิกในวันหยุด
-    const holidayClaimStyle = document.createElement('style');
-    holidayClaimStyle.textContent = `
-      .holiday-claim {
-        background-color: #fbcfe8 !important;
-        color: #831843;
-      }
-    `;
-    document.head.appendChild(holidayClaimStyle);
-
     // Body
     html += '<tbody>';
     // Load schedule data once
@@ -1923,11 +1903,15 @@ async function generateClaimTable() {
         let cellClass = 'border border-gray-300 p-1 text-center relative';
         let cellContent = '';
         // Add weekend/holiday color
-        const isWeekend = dayOfWeek === 0 || dayOfWeek === 6;
-        const isHoliday = holidays && holidays[dateStr];
-        const isWorkingDay = !(isWeekend || isHoliday);
-        if (isWeekend) cellClass += ' weekend';
-        if (isHoliday) cellClass += ' holiday';
+        if (dayOfWeek === 0 || dayOfWeek === 6) cellClass += ' weekend';
+        if (holidays && holidays[dateStr]) cellClass += ' holiday';
+        
+        // เพิ่มมุมสีชมพูสำหรับวันที่มีการเบิกในวันหยุด
+        const holidayClaims = dayRecords.filter(r => r.claimDate === dateStr && r.type === 'holiday');
+        const isHoliday = (holidays && holidays[dateStr]) || dayOfWeek === 0 || dayOfWeek === 6;
+        if (isHoliday && holidayClaims.length > 0) {
+          cellClass += ' holiday-claim';
+        }
 
         // --- ตรวจสอบสถานะการลา/เบิก/เวรยังไม่ครบ แม้จะเป็นวันหยุด ---
         const scheduleKey = `${empId}_${dateStr}`;
@@ -2050,6 +2034,10 @@ async function generateClaimTable() {
         <div class="flex items-center gap-2">
           <span class="w-6 h-6 bg-yellow-500 rounded"></span>
           <span>ช่องสีเหลือง คือ เวรยังไม่ครบ</span>
+        </div>
+        <div class="flex items-center gap-2">
+          <div class="w-6 h-6 relative" style="background: linear-gradient(135deg, #f9a8d4 50%, transparent 50%)"></div>
+          <span>มุมสีชมพู คือ เบิกในวันหยุด</span>
         </div>
         <div class="flex items-center gap-2">
           <span style="font-size:1.50rem;color:#ef4444;font-weight:bold;" class="inline-block ml-1">จ</span>
