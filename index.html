@@ -11,19 +11,20 @@
     <!-- เพิ่มสองบรรทัดนี้ใน <head> -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
     <script type="module">
         import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.7.0/firebase-app.js';
-        import { getDatabase, ref, push, set, get, remove, update } from 'https://www.gstatic.com/firebasejs/10.7.0/firebase-database.js';
+        import { getDatabase, ref, push, set, get, remove, update, onValue } from 'https://www.gstatic.com/firebasejs/10.7.0/firebase-database.js';
 
         const firebaseConfig = {
-            apiKey: "AIzaSyABVSPHnKroNKRKdRJVGUUnbSoo4G5caSM",
-            authDomain: "epid-employeev1.firebaseapp.com",
-            databaseURL: "https://epid-employeev1-default-rtdb.asia-southeast1.firebasedatabase.app",
-            projectId: "epid-employeev1",
-            storageBucket: "epid-employeev1.firebasestorage.app",
-            messagingSenderId: "154704410306",
-            appId: "1:154704410306:web:5b6301055de72b9610ed5b",
-            measurementId: "G-SE72761NVF"
+            apiKey: "AIzaSyD1Ukei5Gz0cR3_ZfS9k3LMpODpRzrcFIc",
+            authDomain: "employeev2.firebaseapp.com",
+            databaseURL: "https://employeev2-default-rtdb.asia-southeast1.firebasedatabase.app",
+            projectId: "employeev2",
+            storageBucket: "employeev2.firebasestorage.app",
+            messagingSenderId: "982481071883",
+            appId: "1:982481071883:web:c58f2c777547fb8dc83c0e",
+            measurementId: "G-HLJC6RFNPK"
         };
 
         try {
@@ -36,6 +37,7 @@
             window.dbGet = get;
             window.dbRemove = remove;
             window.dbUpdate = update;
+            window.dbOnValue = onValue;
             window.firebaseReady = true;
             console.log('Firebase initialized successfully');
         } catch (error) {
@@ -107,13 +109,403 @@
           text-shadow: 0 0 0px #fff, 0 0px 0px #fff;
         }
         .claim-cell { position: relative; }
+
+        /* ===== Dark Theme ===== */
+        body.theme-dark { background-color: #0f172a !important; color: #e2e8f0; }
+        body.theme-dark nav { background-color: #1e293b !important; }
+        body.theme-dark .card { background: #1e293b !important; color: #e2e8f0; box-shadow: 0 4px 6px rgba(0,0,0,0.5) !important; }
+        body.theme-dark .tab-inactive { background-color: #334155 !important; color: #94a3b8 !important; }
+        body.theme-dark .tab-active { background-color: #10b981 !important; color: white !important; }
+        body.theme-dark .input-field { background-color: #334155 !important; border-color: #475569 !important; color: #e2e8f0 !important; }
+        body.theme-dark .input-field:focus { border-color: #10b981 !important; }
+        body.theme-dark .popup-content { background: #1e293b !important; color: #e2e8f0 !important; }
+        body.theme-dark .bg-gray-50, body.theme-dark .bg-gray-100 { background-color: #334155 !important; }
+        body.theme-dark .bg-white { background-color: #1e293b !important; }
+        body.theme-dark .text-gray-500 { color: #64748b !important; }
+        body.theme-dark .text-gray-600 { color: #94a3b8 !important; }
+        body.theme-dark .text-gray-700 { color: #cbd5e1 !important; }
+        body.theme-dark .text-gray-800 { color: #e2e8f0 !important; }
+        body.theme-dark .text-emerald-800 { color: #34d399 !important; }
+        body.theme-dark .border-gray-300, body.theme-dark .border-gray-200 { border-color: #475569 !important; }
+        body.theme-dark .border { border-color: #475569 !important; }
+        body.theme-dark .bg-green-100 { background-color: #064e3b !important; }
+        body.theme-dark .text-green-800 { color: #34d399 !important; }
+        body.theme-dark .bg-yellow-100 { background-color: #422006 !important; }
+        body.theme-dark .text-yellow-800 { color: #fbbf24 !important; }
+        body.theme-dark .bg-blue-100 { background-color: #0c1a3e !important; }
+        body.theme-dark .text-blue-700 { color: #60a5fa !important; }
+        body.theme-dark .text-blue-800 { color: #93c5fd !important; }
+        body.theme-dark .bg-red-100 { background-color: #3b0a0a !important; }
+        body.theme-dark .text-red-700 { color: #f87171 !important; }
+        body.theme-dark .bg-gray-200 { background-color: #334155 !important; }
+        body.theme-dark .bg-gray-300 { background-color: #475569 !important; }
+        body.theme-dark td, body.theme-dark th { color: #e2e8f0 !important; }
+        body.theme-dark select option { background-color: #1e293b; color: #e2e8f0; }
+        body.theme-dark .btn-secondary { background-color: #475569 !important; }
+        body.theme-dark .bg-emerald-50 { background-color: #064e3b !important; }
+        body.theme-dark .bg-emerald-100 { background-color: #064e3b !important; }
+        body.theme-dark .weekend, body.theme-dark .holiday { background-color: #1e293b !important; }
+        body.theme-dark .weekend-header, body.theme-dark .holiday-header { background-color: #2d1a1a !important; color: #f87171 !important; }
+        body.theme-dark .schedule-cell { border-color: #334155 !important; }
+        body.theme-dark .schedule-cell:hover { background-color: #334155 !important; }
+        body.theme-dark .work-day { background-color: #10b981 !important; color: white !important; }
+        body.theme-dark .warning { background-color: #fbbf24 !important; color: white !important; }
+        body.theme-dark .holiday-shift { background-color: #f59e0b !important; color: white !important; }
+        body.theme-dark .evening-shift { background-color: #10b981 !important; color: white !important; }
+        body.theme-dark .leave { background-color: #ef4444 !important; color: white !important; }
+        body.theme-dark .text-emerald-700, body.theme-dark .text-emerald-600 { color: #34d399 !important; }
+        body.theme-dark .text-red-500, body.theme-dark .text-red-600, body.theme-dark .text-red-800 { color: #f87171 !important; }
+        body.theme-dark .text-green-600, body.theme-dark .text-green-700 { color: #4ade80 !important; }
+        body.theme-dark .text-yellow-600, body.theme-dark .text-yellow-700 { color: #fbbf24 !important; }
+        body.theme-dark .text-blue-600 { color: #60a5fa !important; }
+        body.theme-dark .text-gray-400 { color: #94a3b8 !important; }
+        body.theme-dark #theme-dropdown { background-color: #1e293b !important; border: 1px solid #475569; }
+        body.theme-dark #theme-dropdown button { color: #e2e8f0 !important; }
+        body.theme-dark #theme-dropdown button:hover { background-color: #334155 !important; }
+
+        /* ===== Dance Theme ===== */
+        @keyframes danceBackground {
+            0%   { background-color: #1a0033; }
+            16%  { background-color: #001a33; }
+            33%  { background-color: #001a00; }
+            50%  { background-color: #33000d; }
+            66%  { background-color: #1a1a00; }
+            83%  { background-color: #00001a; }
+            100% { background-color: #1a0033; }
+        }
+        @keyframes danceNav {
+            0%   { background-color: #6d28d9; }
+            20%  { background-color: #be185d; }
+            40%  { background-color: #b45309; }
+            60%  { background-color: #0f766e; }
+            80%  { background-color: #1d4ed8; }
+            100% { background-color: #6d28d9; }
+        }
+        @keyframes danceGlow {
+            0%   { box-shadow: 0 0 20px #f0f, 0 0 40px #f0f; border-color: #f0f; }
+            25%  { box-shadow: 0 0 20px #0ff, 0 0 40px #0ff; border-color: #0ff; }
+            50%  { box-shadow: 0 0 20px #ff0, 0 0 40px #ff0; border-color: #ff0; }
+            75%  { box-shadow: 0 0 20px #0f0, 0 0 40px #0f0; border-color: #0f0; }
+            100% { box-shadow: 0 0 20px #f0f, 0 0 40px #f0f; border-color: #f0f; }
+        }
+        @keyframes danceTitle {
+            0%   { color: #ff00ff; text-shadow: 0 0 12px #ff00ff; }
+            25%  { color: #00ffff; text-shadow: 0 0 12px #00ffff; }
+            50%  { color: #ffff00; text-shadow: 0 0 12px #ffff00; }
+            75%  { color: #ff6600; text-shadow: 0 0 12px #ff6600; }
+            100% { color: #ff00ff; text-shadow: 0 0 12px #ff00ff; }
+        }
+        @keyframes dancePrimary {
+            0%   { background-color: #7c3aed; }
+            33%  { background-color: #db2777; }
+            66%  { background-color: #0891b2; }
+            100% { background-color: #7c3aed; }
+        }
+        @keyframes dancePulse { 0%,100% { opacity:1; } 50% { opacity:0.6; } }
+        body.theme-dance { animation: danceBackground 0.6s infinite; color: #fff; }
+        body.theme-dance nav { animation: danceNav 0.4s infinite !important; }
+        body.theme-dance .card { background: rgba(10,0,25,0.88) !important; animation: danceGlow 1s infinite; color: #fff !important; border: 1px solid #f0f; }
+        body.theme-dance h1, body.theme-dance h2, body.theme-dance h3, body.theme-dance .text-emerald-800 { animation: danceTitle 0.8s infinite !important; }
+        body.theme-dance .btn-primary, body.theme-dance .tab-active { animation: dancePrimary 0.5s infinite !important; }
+        body.theme-dance .tab-inactive { background-color: rgba(30,0,60,0.8) !important; color: #cc88ff !important; animation: dancePulse 0.8s infinite !important; }
+        body.theme-dance .input-field { background-color: rgba(20,0,40,0.8) !important; border-color: #ff00ff !important; color: #fff !important; }
+        body.theme-dance .popup-content { background: rgba(10,0,30,0.97) !important; animation: danceGlow 1s infinite; color: #fff !important; border: 1px solid #f0f; }
+        body.theme-dance .text-gray-500, body.theme-dance .text-gray-600, body.theme-dance .text-gray-700, body.theme-dance .text-gray-800 { color: #cc88ff !important; }
+        body.theme-dance .text-gray-400 { color: #aa66ee !important; }
+        body.theme-dance .bg-gray-50, body.theme-dance .bg-gray-100, body.theme-dance .bg-white { background-color: rgba(20,0,40,0.7) !important; }
+        body.theme-dance .border-gray-300, body.theme-dance .border { border-color: #6600ff !important; }
+        body.theme-dance td, body.theme-dance th { color: #fff !important; }
+        body.theme-dance .btn-secondary { animation: dancePrimary 0.7s infinite reverse !important; }
+        body.theme-dance .work-day { animation: dancePrimary 0.5s infinite !important; }
+        body.theme-dance .bg-green-100, body.theme-dance .bg-yellow-100, body.theme-dance .bg-gray-200, body.theme-dance .bg-gray-300, body.theme-dance .bg-blue-100, body.theme-dance .bg-red-100, body.theme-dance .bg-emerald-100, body.theme-dance .bg-emerald-50 { background-color: rgba(30,0,60,0.7) !important; }
+        body.theme-dance .text-emerald-700, body.theme-dance .text-emerald-600 { color: #ff88ff !important; animation: danceTitle 0.8s infinite !important; }
+        body.theme-dance .text-blue-800, body.theme-dance .text-blue-700, body.theme-dance .text-blue-600 { color: #88ccff !important; }
+        body.theme-dance .text-green-800, body.theme-dance .text-green-700, body.theme-dance .text-green-600 { color: #88ffaa !important; }
+        body.theme-dance .text-red-800, body.theme-dance .text-red-700, body.theme-dance .text-red-600, body.theme-dance .text-red-500 { color: #ff8888 !important; }
+        body.theme-dance .text-yellow-800, body.theme-dance .text-yellow-700, body.theme-dance .text-yellow-600 { color: #ffdd66 !important; }
+        body.theme-dance select option { background-color: #1a0033; color: #fff; }
+        body.theme-dance #theme-dropdown { background: rgba(20,0,40,0.97) !important; border: 1px solid #f0f; }
+        body.theme-dance #theme-dropdown button { color: #fff !important; }
+        body.theme-dance .weekend, body.theme-dance .holiday { background-color: rgba(30,0,60,0.5) !important; }
+        body.theme-dance .weekend-header, body.theme-dance .holiday-header { background-color: rgba(80,0,30,0.8) !important; color: #ff8888 !important; animation: dancePulse 0.8s infinite !important; }
+        body.theme-dance .schedule-cell { border-color: #330066 !important; }
+        body.theme-dance .schedule-cell:hover { background-color: rgba(60,0,100,0.6) !important; }
+        body.theme-dance .work-day { background-color: #10b981 !important; color: white !important; }
+        body.theme-dance .warning { background-color: #fbbf24 !important; color: white !important; }
+        body.theme-dance .holiday-shift { background-color: #f59e0b !important; color: white !important; }
+        body.theme-dance .evening-shift { background-color: #10b981 !important; color: white !important; }
+        body.theme-dance .leave { background-color: #ef4444 !important; color: white !important; }
+
+        /* ===== Rain Theme ===== */
+        @keyframes dropFall {
+            0%   { transform: translateY(-40px) rotate(-5deg); opacity: 0; }
+            8%   { opacity: 1; }
+            92%  { opacity: 0.7; }
+            100% { transform: translateY(105vh) rotate(5deg); opacity: 0; }
+        }
+        @keyframes rainGlow { 0%,100% { box-shadow: 0 4px 20px rgba(0,20,50,0.6), inset 0 1px 0 rgba(100,180,240,0.06); } 50% { box-shadow: 0 4px 28px rgba(0,30,70,0.75), inset 0 1px 0 rgba(100,180,240,0.12); } }
+        body.theme-rain {
+            background-color: #0b1624;
+            color: #c4dae8;
+        }
+        body.theme-rain nav { background: linear-gradient(160deg, #08111f 0%, #0d2035 100%) !important; border-bottom: 1px solid #1a3a55 !important; }
+        body.theme-rain .card { background: rgba(17,35,55,0.93) !important; color: #c4dae8 !important; animation: rainGlow 3s ease-in-out infinite; border: 1px solid #1e3f58 !important; }
+        body.theme-rain .tab-inactive { background-color: #102030 !important; color: #6a9ab0 !important; }
+        body.theme-rain .tab-active { background-color: #1d5a8a !important; color: white !important; }
+        body.theme-rain .input-field { background-color: #0e1f30 !important; border-color: #1e3f58 !important; color: #c4dae8 !important; }
+        body.theme-rain .input-field:focus { border-color: #38bdf8 !important; box-shadow: 0 0 0 2px rgba(56,189,248,0.18) !important; }
+        body.theme-rain .popup-content { background: #0f2336 !important; color: #c4dae8 !important; border: 1px solid #1e3f58 !important; box-shadow: 0 20px 60px rgba(0,10,30,0.8) !important; }
+        body.theme-rain .bg-gray-50, body.theme-rain .bg-gray-100 { background-color: #102233 !important; }
+        body.theme-rain .bg-gray-200, body.theme-rain .bg-gray-300 { background-color: #163044 !important; }
+        body.theme-rain .bg-white { background-color: #112238 !important; }
+        body.theme-rain .text-gray-400 { color: #3d6f88 !important; }
+        body.theme-rain .text-gray-500 { color: #4e8aa0 !important; }
+        body.theme-rain .text-gray-600 { color: #6aa0b8 !important; }
+        body.theme-rain .text-gray-700 { color: #96bdd0 !important; }
+        body.theme-rain .text-gray-800 { color: #c4dae8 !important; }
+        body.theme-rain .text-emerald-800, body.theme-rain .text-emerald-700, body.theme-rain .text-emerald-600 { color: #38bdf8 !important; }
+        body.theme-rain .text-blue-800, body.theme-rain .text-blue-700, body.theme-rain .text-blue-600 { color: #7dd3fc !important; }
+        body.theme-rain .text-green-800, body.theme-rain .text-green-700, body.theme-rain .text-green-600 { color: #86efac !important; }
+        body.theme-rain .text-red-800, body.theme-rain .text-red-700, body.theme-rain .text-red-600, body.theme-rain .text-red-500 { color: #f87171 !important; }
+        body.theme-rain .text-yellow-800, body.theme-rain .text-yellow-700, body.theme-rain .text-yellow-600 { color: #fcd34d !important; }
+        body.theme-rain .border-gray-300, body.theme-rain .border-gray-200, body.theme-rain .border { border-color: #1e3f58 !important; }
+        body.theme-rain td, body.theme-rain th { color: #c4dae8 !important; }
+        body.theme-rain select option { background-color: #112238; color: #c4dae8; }
+        body.theme-rain .btn-primary { background: linear-gradient(135deg, #1a5276, #1d6fa0) !important; box-shadow: 0 2px 10px rgba(29,111,160,0.35) !important; }
+        body.theme-rain .btn-secondary { background-color: #163044 !important; color: #c4dae8 !important; }
+        body.theme-rain .bg-green-100 { background-color: #071f10 !important; }
+        body.theme-rain .bg-yellow-100 { background-color: #1f1400 !important; }
+        body.theme-rain .bg-blue-100 { background-color: #071828 !important; }
+        body.theme-rain .bg-red-100 { background-color: #200808 !important; }
+        body.theme-rain .bg-emerald-50, body.theme-rain .bg-emerald-100 { background-color: #071a2a !important; }
+        body.theme-rain .weekend, body.theme-rain .holiday { background-color: #0e1f2e !important; }
+        body.theme-rain .weekend-header, body.theme-rain .holiday-header { background-color: #1a0f1f !important; color: #f87171 !important; }
+        body.theme-rain .schedule-cell { border-color: #163044 !important; }
+        body.theme-rain .schedule-cell:hover { background-color: #163044 !important; }
+        body.theme-rain .work-day { background-color: #10b981 !important; color: white !important; }
+        body.theme-rain .warning { background-color: #fbbf24 !important; color: white !important; }
+        body.theme-rain .holiday-shift { background-color: #f59e0b !important; color: white !important; }
+        body.theme-rain .evening-shift { background-color: #10b981 !important; color: white !important; }
+        body.theme-rain .leave { background-color: #ef4444 !important; color: white !important; }
+        body.theme-rain #theme-dropdown { background-color: #112238 !important; border: 1px solid #1e3f58; }
+        body.theme-rain #theme-dropdown button { color: #c4dae8 !important; }
+        body.theme-rain #theme-dropdown button:hover { background-color: #163044 !important; }
+
+        /* ===== Snow Theme ===== */
+        @keyframes snowFall {
+            0%   { transform: translateY(-30px) translateX(0px) rotate(0deg); opacity: 0; }
+            5%   { opacity: 1; }
+            50%  { transform: translateY(50vh) translateX(18px) rotate(180deg); }
+            100% { transform: translateY(105vh) translateX(-10px) rotate(360deg); opacity: 0; }
+        }
+        @keyframes snowGlow { 0%,100% { box-shadow: 0 4px 20px rgba(180,210,255,0.18); } 50% { box-shadow: 0 4px 28px rgba(180,210,255,0.34); } }
+        body.theme-snow {
+            background: linear-gradient(180deg, #c9dff5 0%, #e8f1fa 40%, #f0f7ff 100%) !important;
+            color: #1e3a5f;
+        }
+        body.theme-snow nav { background: linear-gradient(135deg, #2563a8 0%, #1d4e8f 100%) !important; border-bottom: 1px solid #3b82c4 !important; }
+        body.theme-snow .card { background: rgba(255,255,255,0.88) !important; color: #1e3a5f !important; animation: snowGlow 3s ease-in-out infinite; border: 1px solid #b8d4f0 !important; }
+        body.theme-snow .tab-inactive { background-color: #dbeafe !important; color: #2563a8 !important; }
+        body.theme-snow .tab-active { background-color: #1d4ed8 !important; color: white !important; }
+        body.theme-snow .input-field { background-color: #f0f7ff !important; border-color: #93c5fd !important; color: #1e3a5f !important; }
+        body.theme-snow .input-field:focus { border-color: #2563a8 !important; box-shadow: 0 0 0 2px rgba(37,99,168,0.18) !important; }
+        body.theme-snow .popup-content { background: #f0f7ff !important; color: #1e3a5f !important; border: 1px solid #93c5fd !important; box-shadow: 0 20px 60px rgba(30,58,100,0.18) !important; }
+        body.theme-snow .bg-gray-50, body.theme-snow .bg-gray-100 { background-color: #e8f0fb !important; }
+        body.theme-snow .bg-gray-200, body.theme-snow .bg-gray-300 { background-color: #d0e3f7 !important; }
+        body.theme-snow .bg-white { background-color: #f0f7ff !important; }
+        body.theme-snow .text-gray-400 { color: #6b9dc8 !important; }
+        body.theme-snow .text-gray-500 { color: #4a7aaa !important; }
+        body.theme-snow .text-gray-600 { color: #2e5f8a !important; }
+        body.theme-snow .text-gray-700 { color: #1e3a5f !important; }
+        body.theme-snow .text-gray-800 { color: #0f2040 !important; }
+        body.theme-snow .text-emerald-800, body.theme-snow .text-emerald-700, body.theme-snow .text-emerald-600 { color: #1d4ed8 !important; }
+        body.theme-snow .text-blue-800, body.theme-snow .text-blue-700, body.theme-snow .text-blue-600 { color: #1d4ed8 !important; }
+        body.theme-snow .text-green-800, body.theme-snow .text-green-700, body.theme-snow .text-green-600 { color: #065f46 !important; }
+        body.theme-snow .text-red-800, body.theme-snow .text-red-700, body.theme-snow .text-red-600, body.theme-snow .text-red-500 { color: #b91c1c !important; }
+        body.theme-snow .text-yellow-800, body.theme-snow .text-yellow-700, body.theme-snow .text-yellow-600 { color: #92400e !important; }
+        body.theme-snow .border-gray-300, body.theme-snow .border-gray-200, body.theme-snow .border { border-color: #93c5fd !important; }
+        body.theme-snow td, body.theme-snow th { color: #1e3a5f !important; }
+        body.theme-snow select option { background-color: #f0f7ff; color: #1e3a5f; }
+        body.theme-snow .btn-primary { background: linear-gradient(135deg, #2563a8, #1d4ed8) !important; box-shadow: 0 2px 10px rgba(37,99,168,0.35) !important; }
+        body.theme-snow .btn-secondary { background-color: #93c5fd !important; color: #1e3a5f !important; }
+        body.theme-snow .bg-green-100 { background-color: #d1fae5 !important; }
+        body.theme-snow .bg-yellow-100 { background-color: #fef3c7 !important; }
+        body.theme-snow .bg-blue-100 { background-color: #dbeafe !important; }
+        body.theme-snow .bg-red-100 { background-color: #fee2e2 !important; }
+        body.theme-snow .bg-emerald-50, body.theme-snow .bg-emerald-100 { background-color: #ecfdf5 !important; }
+        body.theme-snow .weekend, body.theme-snow .holiday { background-color: #dbeafe !important; }
+        body.theme-snow .weekend-header, body.theme-snow .holiday-header { background-color: #bfdbfe !important; color: #b91c1c !important; }
+        body.theme-snow .schedule-cell { border-color: #93c5fd !important; }
+        body.theme-snow .schedule-cell:hover { background-color: #dbeafe !important; }
+        body.theme-snow .work-day { background-color: #10b981 !important; color: white !important; }
+        body.theme-snow .warning { background-color: #fbbf24 !important; color: white !important; }
+        body.theme-snow .holiday-shift { background-color: #f59e0b !important; color: white !important; }
+        body.theme-snow .evening-shift { background-color: #10b981 !important; color: white !important; }
+        body.theme-snow .leave { background-color: #ef4444 !important; color: white !important; }
+        body.theme-snow #theme-dropdown { background-color: #f0f7ff !important; border: 1px solid #93c5fd; }
+        body.theme-snow #theme-dropdown button { color: #1e3a5f !important; }
+        body.theme-snow #theme-dropdown button:hover { background-color: #dbeafe !important; }
+
+        /* ===== Hell / Festival Theme (CSS-variable accent, fireworks overlay) ===== */
+        @keyframes hellGlow {
+            0%,100% { box-shadow: 0 4px 24px var(--hg,rgba(255,51,51,0.4)), 0 0 50px rgba(255,255,255,0.02); }
+            50%      { box-shadow: 0 6px 36px var(--hg,rgba(255,51,51,0.4)), 0 0 80px rgba(255,255,255,0.06); }
+        }
+        @keyframes hellNavPulse {
+            0%,100% { background: linear-gradient(135deg, var(--hn1,#2a0505) 0%, var(--hn2,#550a0a) 100%); }
+            50%      { background: linear-gradient(135deg, var(--hn2,#550a0a) 0%, var(--ha,#ff3333) 100%); }
+        }
+        @keyframes hellTitle {
+            0%,100% { color: var(--ha,#ff3333);  text-shadow: 0 0 12px var(--ha,#ff3333); }
+            50%      { color: var(--ha2,#ffaa00); text-shadow: 0 0 18px var(--ha2,#ffaa00); }
+        }
+        body.theme-hell {
+            --ha:  #ff3333;
+            --ha2: #ff6600;
+            --hg:  rgba(255,51,51,0.42);
+            --hn1: #2a0505;
+            --hn2: #550a0a;
+            --hb:  #aa2222;
+            background: #12121f !important;
+            color: #f0eef8;
+        }
+        body.theme-hell nav { animation: hellNavPulse 2.5s ease-in-out infinite !important; border-bottom: 1px solid var(--hb) !important; }
+        body.theme-hell .card { background: #1c1c2e !important; color: #f0eef8 !important; animation: hellGlow 2.5s ease-in-out infinite; border: 1px solid var(--hb) !important; }
+        body.theme-hell h1, body.theme-hell h2, body.theme-hell h3, body.theme-hell .text-emerald-800 { animation: hellTitle 2s ease-in-out infinite !important; }
+        body.theme-hell .tab-inactive { background-color: #1e1e32 !important; color: #a8a8cc !important; }
+        body.theme-hell .tab-active { background-color: var(--ha) !important; color: #fff !important; }
+        body.theme-hell .btn-primary { background: var(--ha) !important; box-shadow: 0 2px 12px var(--hg) !important; }
+        body.theme-hell .btn-primary:hover { filter: brightness(1.18) !important; }
+        body.theme-hell .btn-secondary { background-color: #2a2a42 !important; color: #d0d0ee !important; }
+        body.theme-hell .input-field { background-color: #1a1a2e !important; border-color: var(--hb) !important; color: #f0eef8 !important; }
+        body.theme-hell .input-field:focus { border-color: var(--ha) !important; box-shadow: 0 0 0 2px var(--hg) !important; }
+        body.theme-hell .popup-content { background: #14142a !important; color: #f0eef8 !important; border: 1px solid var(--hb) !important; box-shadow: 0 20px 60px rgba(0,0,0,0.7) !important; }
+        body.theme-hell .bg-gray-50, body.theme-hell .bg-gray-100 { background-color: #1a1a2e !important; }
+        body.theme-hell .bg-gray-200, body.theme-hell .bg-gray-300 { background-color: #22223a !important; }
+        body.theme-hell .bg-white { background-color: #14142a !important; }
+        body.theme-hell .text-gray-400 { color: #7878a0 !important; }
+        body.theme-hell .text-gray-500 { color: #9090b8 !important; }
+        body.theme-hell .text-gray-600 { color: #b0b0d0 !important; }
+        body.theme-hell .text-gray-700 { color: #d0d0e8 !important; }
+        body.theme-hell .text-gray-800 { color: #f0eef8 !important; }
+        body.theme-hell .text-emerald-700, body.theme-hell .text-emerald-600 { color: var(--ha2) !important; }
+        body.theme-hell .text-blue-800, body.theme-hell .text-blue-700, body.theme-hell .text-blue-600 { color: #88aaff !important; }
+        body.theme-hell .text-green-800, body.theme-hell .text-green-700, body.theme-hell .text-green-600 { color: #66ee99 !important; }
+        body.theme-hell .text-red-800, body.theme-hell .text-red-700, body.theme-hell .text-red-600, body.theme-hell .text-red-500 { color: #ff9090 !important; }
+        body.theme-hell .text-yellow-800, body.theme-hell .text-yellow-700, body.theme-hell .text-yellow-600 { color: #ffdd66 !important; }
+        body.theme-hell .border-gray-300, body.theme-hell .border-gray-200, body.theme-hell .border { border-color: #2e2e48 !important; }
+        body.theme-hell td, body.theme-hell th { color: #f0eef8 !important; }
+        body.theme-hell select option { background-color: #1c1c2e; color: #f0eef8; }
+        body.theme-hell .bg-green-100 { background-color: #0d1f15 !important; }
+        body.theme-hell .bg-yellow-100 { background-color: #1f1800 !important; }
+        body.theme-hell .bg-blue-100  { background-color: #0d1230 !important; }
+        body.theme-hell .bg-red-100   { background-color: #1f0d0d !important; }
+        body.theme-hell .bg-emerald-50, body.theme-hell .bg-emerald-100 { background-color: #0d1f15 !important; }
+        body.theme-hell .weekend, body.theme-hell .holiday { background-color: #161625 !important; }
+        body.theme-hell .weekend-header, body.theme-hell .holiday-header { background-color: #20202f !important; color: #ff9090 !important; }
+        body.theme-hell .schedule-cell { border-color: #2a2a40 !important; }
+        body.theme-hell .schedule-cell:hover { background-color: #22223a !important; }
+        body.theme-hell .work-day { background-color: var(--ha) !important; color: white !important; }
+        body.theme-hell .warning { background-color: #d97706 !important; color: white !important; }
+        body.theme-hell .holiday-shift { background-color: #ea580c !important; color: white !important; }
+        body.theme-hell .evening-shift { background-color: var(--ha) !important; color: white !important; }
+        body.theme-hell .leave { background-color: #3a0f3a !important; color: #f0c0ff !important; }
+        body.theme-hell #theme-dropdown { background-color: #1c1c2e !important; border: 1px solid #2e2e48; }
+        body.theme-hell #theme-dropdown button { color: #f0eef8 !important; }
+        body.theme-hell #theme-dropdown button:hover { background-color: #22223a !important; }
+
+        /* ===== Vassa (เข้าพรรษา) Theme ===== */
+        @keyframes lotusFloat {
+            0%   { transform: translateY(0) translateX(0) rotate(0deg) scale(1); opacity: 0; }
+            8%   { opacity: 0.85; }
+            40%  { transform: translateY(-42vh) translateX(10px) rotate(12deg) scale(1.05); }
+            88%  { opacity: 0.6; }
+            100% { transform: translateY(-108vh) translateX(-8px) rotate(-8deg) scale(0.7); opacity: 0; }
+        }
+        @keyframes incenseRise {
+            0%   { transform: translateY(0) translateX(0) scaleX(1); opacity: 0; }
+            12%  { opacity: 0.55; }
+            35%  { transform: translateY(-22vh) translateX(7px) scaleX(1.3); }
+            70%  { transform: translateY(-60vh) translateX(-5px) scaleX(0.7); }
+            100% { transform: translateY(-105vh) translateX(3px) scaleX(1.1); opacity: 0; }
+        }
+        @keyframes vassaGlow {
+            0%,100% { box-shadow: 0 4px 20px rgba(180,83,9,0.12); }
+            50%      { box-shadow: 0 4px 28px rgba(217,119,6,0.22); }
+        }
+        @keyframes monkBow {
+            0%,100% { transform: scale(1) rotate(0deg); }
+            40%      { transform: scale(1.12) rotate(-5deg); }
+            60%      { transform: scale(1.12) rotate(5deg); }
+        }
+        body.theme-vassa {
+            background: linear-gradient(180deg, #fffdf5 0%, #fff8e8 50%, #fff3d8 100%) !important;
+            color: #451a03;
+        }
+        body.theme-vassa nav { background: linear-gradient(135deg, #92400e 0%, #b45309 100%) !important; border-bottom: 2px solid #f59e0b !important; }
+        body.theme-vassa .card { background: #ffffff !important; color: #451a03 !important; animation: vassaGlow 3s ease-in-out infinite; border: 1px solid #fde68a !important; }
+        body.theme-vassa .tab-inactive { background-color: #fef9ee !important; color: #92400e !important; border: 1px solid #fde68a !important; }
+        body.theme-vassa .tab-active { background-color: #b45309 !important; color: white !important; }
+        body.theme-vassa .btn-primary { background: linear-gradient(135deg, #b45309, #d97706) !important; box-shadow: 0 2px 10px rgba(180,83,9,0.3) !important; }
+        body.theme-vassa .btn-primary:hover { filter: brightness(1.1) !important; }
+        body.theme-vassa .btn-secondary { background-color: #fef3c7 !important; color: #92400e !important; border: 1px solid #fde68a !important; }
+        body.theme-vassa .input-field { background-color: #fffdf5 !important; border-color: #fcd34d !important; color: #451a03 !important; }
+        body.theme-vassa .input-field:focus { border-color: #d97706 !important; box-shadow: 0 0 0 2px rgba(217,119,6,0.2) !important; }
+        body.theme-vassa .popup-content { background: #fffdf5 !important; color: #451a03 !important; border: 1px solid #fde68a !important; box-shadow: 0 20px 60px rgba(120,53,15,0.18) !important; }
+        body.theme-vassa .bg-gray-50, body.theme-vassa .bg-gray-100 { background-color: #fef9ee !important; }
+        body.theme-vassa .bg-gray-200, body.theme-vassa .bg-gray-300 { background-color: #fef3c7 !important; }
+        body.theme-vassa .bg-white { background-color: #fffdf5 !important; }
+        body.theme-vassa .text-gray-400 { color: #c8926a !important; }
+        body.theme-vassa .text-gray-500 { color: #a16040 !important; }
+        body.theme-vassa .text-gray-600 { color: #854d0e !important; }
+        body.theme-vassa .text-gray-700 { color: #713f12 !important; }
+        body.theme-vassa .text-gray-800 { color: #451a03 !important; }
+        body.theme-vassa .text-emerald-800, body.theme-vassa .text-emerald-700, body.theme-vassa .text-emerald-600 { color: #b45309 !important; }
+        body.theme-vassa .text-blue-800, body.theme-vassa .text-blue-700, body.theme-vassa .text-blue-600 { color: #1d4ed8 !important; }
+        body.theme-vassa .text-green-800, body.theme-vassa .text-green-700, body.theme-vassa .text-green-600 { color: #065f46 !important; }
+        body.theme-vassa .text-red-800, body.theme-vassa .text-red-700, body.theme-vassa .text-red-600, body.theme-vassa .text-red-500 { color: #b91c1c !important; }
+        body.theme-vassa .text-yellow-800, body.theme-vassa .text-yellow-700, body.theme-vassa .text-yellow-600 { color: #92400e !important; }
+        body.theme-vassa .border-gray-300, body.theme-vassa .border-gray-200, body.theme-vassa .border { border-color: #fde68a !important; }
+        body.theme-vassa td, body.theme-vassa th { color: #451a03 !important; }
+        body.theme-vassa select option { background-color: #fffdf5; color: #451a03; }
+        body.theme-vassa .bg-green-100 { background-color: #d1fae5 !important; }
+        body.theme-vassa .bg-yellow-100 { background-color: #fef9c3 !important; }
+        body.theme-vassa .bg-blue-100  { background-color: #dbeafe !important; }
+        body.theme-vassa .bg-red-100   { background-color: #fee2e2 !important; }
+        body.theme-vassa .bg-emerald-50, body.theme-vassa .bg-emerald-100 { background-color: #ecfdf5 !important; }
+        body.theme-vassa .weekend, body.theme-vassa .holiday { background-color: #fef9ee !important; }
+        body.theme-vassa .weekend-header, body.theme-vassa .holiday-header { background-color: #fef3c7 !important; color: #b91c1c !important; }
+        body.theme-vassa .schedule-cell { border-color: #fde68a !important; }
+        body.theme-vassa .schedule-cell:hover { background-color: #fef9ee !important; }
+        body.theme-vassa .work-day { background-color: #d97706 !important; color: white !important; }
+        body.theme-vassa .warning { background-color: #f59e0b !important; color: white !important; }
+        body.theme-vassa .holiday-shift { background-color: #ea580c !important; color: white !important; }
+        body.theme-vassa .evening-shift { background-color: #d97706 !important; color: white !important; }
+        body.theme-vassa .leave { background-color: #ef4444 !important; color: white !important; }
+        body.theme-vassa #theme-dropdown { background-color: #fffdf5 !important; border: 1px solid #fde68a; }
+        body.theme-vassa #theme-dropdown button { color: #451a03 !important; }
+        body.theme-vassa #theme-dropdown button:hover { background-color: #fef9ee !important; }
     </style>
 </head>
 <body class="bg-gray-100 min-h-screen">
     <!-- Navigation -->
     <nav class="bg-emerald-800 text-white p-4 shadow-lg">
-        <div class="container mx-auto">
+        <div class="container mx-auto flex justify-between items-center">
             <h1 class="text-2xl font-bold">ระบบจัดการการทำงานเจ้าหน้าที่รายวัน - กลุ่มงานระบาดวิทยา</h1>
+            <div class="relative">
+                <button onclick="toggleThemeDropdown()" class="flex items-center gap-1 bg-white/20 hover:bg-white/30 px-3 py-1.5 rounded-lg text-sm transition-colors whitespace-nowrap">
+                    <span id="theme-btn-label">☀️ สว่าง</span> ▾
+                </button>
+                <div id="theme-dropdown" class="hidden absolute right-0 mt-1 bg-white text-gray-800 rounded-lg shadow-xl overflow-hidden z-50 min-w-max">
+                    <button onclick="setTheme('light')" class="flex items-center gap-2 w-full px-4 py-2 text-left hover:bg-gray-100 text-sm">☀️ สว่าง</button>
+                    <button onclick="setTheme('dark')" class="flex items-center gap-2 w-full px-4 py-2 text-left hover:bg-gray-100 text-sm">🌙 มืด</button>
+                    <button onclick="setTheme('rain')" class="flex items-center gap-2 w-full px-4 py-2 text-left hover:bg-gray-100 text-sm">🌧️ หน้าฝน</button>
+                    <button onclick="setTheme('snow')" class="flex items-center gap-2 w-full px-4 py-2 text-left hover:bg-gray-100 text-sm">❄️ หิมะตก</button>
+                    <button onclick="setTheme('vassa')" class="flex items-center gap-2 w-full px-4 py-2 text-left hover:bg-gray-100 text-sm">🪷 เข้าพรรษา</button>
+                    <button onclick="setTheme('hell')" class="flex items-center gap-2 w-full px-4 py-2 text-left hover:bg-gray-100 text-sm">🔥 ไฟนรก</button>
+                    <button onclick="setTheme('dance')" class="flex items-center gap-2 w-full px-4 py-2 text-left hover:bg-gray-100 text-sm">🪩 แดนซ์</button>
+                </div>
+            </div>
         </div>
     </nav>
 
@@ -121,12 +513,13 @@
     <div class="container mx-auto mt-6 px-4">
         <div class="flex flex-wrap gap-2 mb-6">
             <button onclick="showTab('summary')" id="tab-summary" class="px-4 py-2 rounded-lg font-medium tab-active">สรุปผลงาน</button>
-            <button onclick="showTab('record')" id="tab-record" class="px-4 py-2 rounded-lg font-medium tab-inactive">บันทึกการปฏิบัติงาน</button>
+            <button onclick="showTab('record')" id="tab-record" class="px-4 py-2 rounded-lg font-medium tab-inactive hidden">บันทึกการปฏิบัติงาน</button>
             <button onclick="showTab('history')" id="tab-history" class="px-4 py-2 rounded-lg font-medium tab-inactive">ประวัติการบันทึก</button>
             <button onclick="showTab('schedule')" id="tab-schedule" class="px-4 py-2 rounded-lg font-medium tab-inactive">ตารางเวร</button>
             <button onclick="showTab('claim')" id="tab-claim" class="px-4 py-2 rounded-lg font-medium tab-inactive">ตารางเบิก</button>
             <button onclick="showTab('employees')" id="tab-employees" class="px-4 py-2 rounded-lg font-medium tab-inactive">รายละเอียดพนักงาน</button>
             <button onclick="showTab('tasks')" id="tab-tasks" class="px-4 py-2 rounded-lg font-medium tab-inactive">ภาระงาน</button>
+            <button onclick="showTab('export')" id="tab-export" class="px-4 py-2 rounded-lg font-medium tab-inactive">ส่งออกเอกสาร</button>
         </div>
 
         <!-- Summary Tab -->
@@ -356,7 +749,7 @@
             </div>
         </div>
         <div class="flex gap-2 mb-4">
-            <button onclick="openClaimBookingPopup()" class="btn-primary px-4 py-2 rounded-lg">จองวันเบิก</button>
+            <button onclick="openClaimBookingPopup()" class="btn-primary px-4 py-2 rounded-lg hidden">จองวันเบิก</button>
             <button onclick="generateClaimTable()" class="btn-primary px-4 py-2 rounded-lg">สร้างตาราง</button>
             <button onclick="exportClaim()" class="btn-secondary px-4 py-2 rounded-lg">ส่งออก Excel</button>
         </div>
@@ -383,8 +776,12 @@
   <input type="date" id="booking-date" class="input-field w-full" required>
 </div>
       <div>
-        <label class="block mb-1">เบิกแทนวันที่ (เช่น 2025-07-01, 2025-07-02)</label>
-        <input type="text" id="booking-for-dates" class="input-field w-full" placeholder="คั่นด้วย , หรือเว้นวรรค">
+        <label class="block mb-1">เบิกแทนวันที่</label>
+        <div class="flex gap-2">
+          <input type="date" id="booking-for-date-input" class="input-field flex-1">
+          <button type="button" onclick="addForDate()" class="btn-primary px-3 py-2 rounded-lg">เพิ่ม</button>
+        </div>
+        <div id="booking-for-dates-list" class="mt-2 flex flex-wrap gap-1"></div>
       </div>
       <input type="hidden" id="editing-booking-id">
       <div class="flex gap-2">
@@ -447,6 +844,95 @@
                 <div id="tasks-list" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4"></div>
             </div>
         </div>
+        <!-- Export Document Tab -->
+        <div id="export-tab" class="tab-content hidden">
+            <div class="card p-6 mb-6">
+                <h2 class="text-xl font-bold text-emerald-800 mb-4">ส่งออกเอกสารเบิกเงิน</h2>
+                <p class="text-gray-500 text-sm mb-6">ส่งออกเอกสาร "บุคคลภายนอกช่วยปฏิบัติงานราชการ" รูปแบบ .docx จากข้อมูลการบันทึกงานปกติ (08:00–16:00)</p>
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+                    <div>
+                        <label class="block text-sm font-medium mb-2">พนักงาน</label>
+                        <select id="export-emp-select" class="input-field w-full">
+                            <option value="">เลือกพนักงาน</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium mb-2">เดือน</label>
+                        <select id="export-month-select" class="input-field w-full">
+                            <option value="1">มกราคม</option>
+                            <option value="2">กุมภาพันธ์</option>
+                            <option value="3">มีนาคม</option>
+                            <option value="4">เมษายน</option>
+                            <option value="5">พฤษภาคม</option>
+                            <option value="6">มิถุนายน</option>
+                            <option value="7">กรกฎาคม</option>
+                            <option value="8">สิงหาคม</option>
+                            <option value="9">กันยายน</option>
+                            <option value="10">ตุลาคม</option>
+                            <option value="11">พฤศจิกายน</option>
+                            <option value="12">ธันวาคม</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium mb-2">ปี (ค.ศ.)</label>
+                        <input type="number" id="export-year-input" class="input-field w-full" value="2025" min="2020" max="2035">
+                    </div>
+                </div>
+                <button onclick="generateExportDoc()" class="btn-primary px-6 py-3 rounded-lg font-medium">ส่งออก .docx</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Quick Work Record Popup -->
+    <div id="quick-record-popup" class="popup-overlay hidden" style="z-index:2000">
+        <div class="popup-content">
+            <div class="flex justify-between items-center mb-4">
+                <h3 class="text-xl font-bold text-emerald-800">เพิ่มงานที่ทำ</h3>
+                <button onclick="closeQuickRecordPopup()" class="bg-gray-200 hover:bg-red-500 hover:text-white text-gray-700 w-8 h-8 rounded-full flex items-center justify-center text-xl font-bold transition-colors duration-200">&times;</button>
+            </div>
+            <div class="space-y-4">
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-sm font-medium mb-1">ชื่อ-นามสกุล</label>
+                        <p id="qr-emp-display" class="input-field w-full bg-gray-100 text-gray-700 py-2 px-3"></p>
+                        <input type="hidden" id="qr-emp-id">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium mb-1">วันที่เบิก</label>
+                        <p id="qr-date-display" class="input-field w-full bg-gray-100 text-gray-700 py-2 px-3"></p>
+                        <input type="hidden" id="qr-date">
+                        <input type="hidden" id="qr-record-id">
+                    </div>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium mb-2">ประเภทการบันทึก</label>
+                    <select id="qr-type" class="input-field w-full" onchange="toggleQuickWorkDate()">
+                        <option value="">เลือกประเภท</option>
+                        <option value="normal">วันทำงานปกติ</option>
+                        <option value="evening">เวรเย็น</option>
+                        <option value="holiday">เวรวันหยุด</option>
+                    </select>
+                </div>
+                <div id="qr-workdate-section" class="hidden">
+                    <label class="block text-sm font-medium mb-2">วันที่ทำงาน</label>
+                    <input type="date" id="qr-workdate" class="input-field w-full">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium mb-2">ภาระงาน</label>
+                    <div id="qr-task-entries"></div>
+                    <button type="button" onclick="addQuickTaskEntry()" class="btn-primary px-4 py-2 rounded-lg mt-2">เพิ่มภาระงาน</button>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium mb-2">งานอื่นๆ</label>
+                    <div id="qr-other-entries"></div>
+                    <button type="button" onclick="addOtherEntry()" class="btn-primary px-4 py-2 rounded-lg mt-2">เพิ่มงานอื่นๆ</button>
+                </div>
+                <div class="flex gap-3">
+                    <button onclick="saveQuickRecord()" class="btn-primary px-6 py-3 rounded-lg">บันทึกข้อมูล</button>
+                    <button onclick="closeQuickRecordPopup()" class="btn-secondary px-6 py-3 rounded-lg">ยกเลิก</button>
+                </div>
+            </div>
+        </div>
     </div>
 
     <!-- Claim Details Popup -->
@@ -468,9 +954,11 @@
         let tasks = {};
         let workRecords = {};
         let holidays = {};
+        let scheduleData = {};
         let currentScheduleData = {};
 let claimBookings = {};
 let bookingDate = "";
+let bookingForDates = [];
 
 async function loadClaimBookings() {
   try {
@@ -509,45 +997,75 @@ function renderClaimBookingList() {
 }
      
 function openClaimBookingPopup() {
-  document.getElementById('claim-booking-popup').classList.remove('hidden');
-  document.getElementById('booking-employee').innerHTML = '<option value="">เลือกพนักงาน</option>' +
+  const empSelect = document.getElementById('booking-employee');
+  const dateInput = document.getElementById('booking-date');
+  empSelect.disabled = false;
+  dateInput.disabled = false;
+  empSelect.innerHTML = '<option value="">เลือกพนักงาน</option>' +
     Object.entries(employees).map(([id, emp]) =>
       `<option value="${id}">${emp.firstname} ${emp.lastname}</option>`
     ).join('');
-  document.getElementById('booking-date').value = '';
-  document.getElementById('booking-for-dates').value = '';
+  dateInput.value = '';
+  document.getElementById('booking-for-date-input').value = '';
   document.getElementById('editing-booking-id').value = '';
   bookingDate = "";
+  bookingForDates = [];
+  renderForDatesList();
   renderClaimBookingList();
+  document.getElementById('claim-booking-popup').classList.remove('hidden');
 }
 function closeClaimBookingPopup() {
+  document.getElementById('booking-employee').disabled = false;
+  document.getElementById('booking-date').disabled = false;
   document.getElementById('claim-booking-popup').classList.add('hidden');
 }
-function addBookingDate() {
-  const date = document.getElementById('booking-date').value;
-  if (date && !bookingDates.includes(date)) {
-    bookingDates.push(date);
-    renderBookingDatesList();
+
+function openQuickBookingPopup(empId, dateStr) {
+  closeClaimPopup();
+  const empSelect = document.getElementById('booking-employee');
+  empSelect.innerHTML = Object.entries(employees).map(([id, emp]) =>
+    `<option value="${id}">${emp.firstname} ${emp.lastname}</option>`
+  ).join('');
+  empSelect.value = empId;
+  empSelect.disabled = true;
+  const dateInput = document.getElementById('booking-date');
+  dateInput.value = dateStr;
+  dateInput.disabled = true;
+  document.getElementById('booking-for-date-input').value = '';
+  document.getElementById('editing-booking-id').value = '';
+  bookingDate = dateStr;
+  bookingForDates = [];
+  renderForDatesList();
+  renderClaimBookingList();
+  document.getElementById('claim-booking-popup').classList.remove('hidden');
+}
+function addForDate() {
+  const input = document.getElementById('booking-for-date-input');
+  const date = input.value;
+  if (date && !bookingForDates.includes(date)) {
+    bookingForDates.push(date);
+    bookingForDates.sort();
+    renderForDatesList();
   }
-  document.getElementById('booking-date').value = '';
+  input.value = '';
 }
-function removeBookingDate(index) {
-  bookingDates.splice(index, 1);
-  renderBookingDatesList();
+function removeForDate(index) {
+  bookingForDates.splice(index, 1);
+  renderForDatesList();
 }
-function renderBookingDatesList() {
-  const listDiv = document.getElementById('booking-dates-list');
+function renderForDatesList() {
+  const listDiv = document.getElementById('booking-for-dates-list');
   if (!listDiv) return;
-  listDiv.innerHTML = bookingDates.map((d, i) =>
-    `<span class="inline-block bg-emerald-200 text-emerald-800 px-2 py-1 rounded m-1 text-sm">${d}
-       <button onclick="removeBookingDate(${i})" class="text-red-500 ml-1">&times;</button>
+  listDiv.innerHTML = bookingForDates.map((d, i) =>
+    `<span class="inline-flex items-center bg-emerald-100 text-emerald-800 px-2 py-1 rounded text-sm">
+       ${new Date(d + 'T00:00:00').toLocaleDateString('th-TH')}
+       <button type="button" onclick="removeForDate(${i})" class="text-red-500 ml-1 font-bold">&times;</button>
      </span>`
   ).join('');
 }
 document.getElementById('claim-booking-form').addEventListener('submit', async function(e){
   e.preventDefault();
   const employeeId = document.getElementById('booking-employee').value;
-  const forDates = document.getElementById('booking-for-dates').value.trim();
   const id = document.getElementById('editing-booking-id').value;
   bookingDate = document.getElementById('booking-date').value;
   if (!employeeId || !bookingDate) {
@@ -557,7 +1075,7 @@ document.getElementById('claim-booking-form').addEventListener('submit', async f
   const booking = {
     employeeId,
     date: bookingDate,
-    forDates: forDates.split(/,|\s/).map(d => d.trim()).filter(d => d),
+    forDates: [...bookingForDates],
     timestamp: Date.now()
   };
   try {
@@ -579,7 +1097,8 @@ async function editClaimBooking(id) {
   openClaimBookingPopup();
   document.getElementById('booking-employee').value = b.employeeId;
   document.getElementById('booking-date').value = b.date;
-  document.getElementById('booking-for-dates').value = (b.forDates || []).join(', ');
+  bookingForDates = [...(b.forDates || [])];
+  renderForDatesList();
   document.getElementById('editing-booking-id').value = id;
 }
 async function deleteClaimBooking(id) {
@@ -591,6 +1110,334 @@ async function deleteClaimBooking(id) {
   }
 }
           
+        function createRainOverlay() {
+            removeRainOverlay();
+            const overlay = document.createElement('div');
+            overlay.id = 'rain-overlay';
+            overlay.style.cssText = 'position:fixed;top:0;left:0;width:100%;height:100%;pointer-events:none;z-index:9998;overflow:hidden;';
+            for (let i = 0; i < 40; i++) {
+                const drop = document.createElement('span');
+                drop.textContent = Math.random() < 0.75 ? '💧' : '💦';
+                const left = Math.random() * 102;
+                const dur  = 1.4 + Math.random() * 2.2;
+                const delay = -(Math.random() * 4);
+                const size = 11 + Math.random() * 13;
+                drop.style.cssText = `position:absolute;left:${left}%;top:0;font-size:${size}px;animation:dropFall ${dur}s ${delay}s linear infinite;opacity:${0.5 + Math.random() * 0.4};`;
+                overlay.appendChild(drop);
+            }
+            document.body.appendChild(overlay);
+        }
+        function removeRainOverlay() {
+            const el = document.getElementById('rain-overlay');
+            if (el) el.remove();
+        }
+        function createSnowOverlay() {
+            removeSnowOverlay();
+            const overlay = document.createElement('div');
+            overlay.id = 'snow-overlay';
+            overlay.style.cssText = 'position:fixed;top:0;left:0;width:100%;height:100%;pointer-events:none;z-index:9998;overflow:hidden;';
+            const flakes = ['❄️','❅','❆','✦','•'];
+            for (let i = 0; i < 50; i++) {
+                const flake = document.createElement('span');
+                flake.textContent = flakes[Math.floor(Math.random() * flakes.length)];
+                const left = Math.random() * 102;
+                const dur  = 4 + Math.random() * 6;
+                const delay = -(Math.random() * 8);
+                const size = 10 + Math.random() * 18;
+                flake.style.cssText = `position:absolute;left:${left}%;top:0;font-size:${size}px;animation:snowFall ${dur}s ${delay}s linear infinite;opacity:${0.5 + Math.random() * 0.5};color:#a8d4f5;`;
+                overlay.appendChild(flake);
+            }
+            document.body.appendChild(overlay);
+        }
+        function removeSnowOverlay() {
+            const el = document.getElementById('snow-overlay');
+            if (el) el.remove();
+        }
+        // ---- Hell theme palette system ----
+        const hellPalettes = [
+            { ha:'#ff2244', ha2:'#ff7744', hg:'rgba(255,34,68,0.45)',   hn1:'#280008', hn2:'#580015', hb:'#aa1133' }, // red
+            { ha:'#ff6600', ha2:'#ffaa00', hg:'rgba(255,102,0,0.45)',   hn1:'#2a0f00', hn2:'#552000', hb:'#cc4400' }, // orange
+            { ha:'#ffcc00', ha2:'#ffe566', hg:'rgba(255,204,0,0.4)',    hn1:'#252000', hn2:'#443500', hb:'#bb9900' }, // yellow
+            { ha:'#00dd66', ha2:'#44ff99', hg:'rgba(0,221,102,0.4)',    hn1:'#001808', hn2:'#003015', hb:'#009944' }, // green
+            { ha:'#00ccff', ha2:'#66eeff', hg:'rgba(0,204,255,0.4)',    hn1:'#001520', hn2:'#002a40', hb:'#0099cc' }, // cyan
+            { ha:'#3366ff', ha2:'#6699ff', hg:'rgba(51,102,255,0.4)',   hn1:'#000820', hn2:'#001040', hb:'#2244cc' }, // blue
+            { ha:'#aa44ff', ha2:'#cc88ff', hg:'rgba(170,68,255,0.4)',   hn1:'#120025', hn2:'#220044', hb:'#7722cc' }, // purple
+            { ha:'#ff00aa', ha2:'#ff66cc', hg:'rgba(255,0,170,0.4)',    hn1:'#200015', hn2:'#400030', hb:'#cc0077' }, // magenta
+            { ha:'#00ffcc', ha2:'#77aaff', hg:'rgba(0,255,204,0.35)',   hn1:'#001515', hn2:'#001428', hb:'#00aaaa' }, // aurora
+            { ha:'#ff4488', ha2:'#ff8800', hg:'rgba(255,68,136,0.4)',   hn1:'#200510', hn2:'#3a0a20', hb:'#cc2255' }, // sunset
+            { ha:'#00ff44', ha2:'#ff00ff', hg:'rgba(0,255,68,0.35)',    hn1:'#001a08', hn2:'#1a0018', hb:'#00cc33' }, // neon
+        ];
+        let _lastHellPaletteIdx = -1;
+        function applyHellPalette(p) {
+            const b = document.body;
+            b.style.setProperty('--ha',  p.ha);
+            b.style.setProperty('--ha2', p.ha2);
+            b.style.setProperty('--hg',  p.hg);
+            b.style.setProperty('--hn1', p.hn1);
+            b.style.setProperty('--hn2', p.hn2);
+            b.style.setProperty('--hb',  p.hb);
+        }
+        function randomHellPalette() {
+            let idx;
+            do { idx = Math.floor(Math.random() * hellPalettes.length); } while (idx === _lastHellPaletteIdx && hellPalettes.length > 1);
+            _lastHellPaletteIdx = idx;
+            return hellPalettes[idx];
+        }
+        function createHellOverlay() {
+            removeHellOverlay();
+            const overlay = document.createElement('div');
+            overlay.id = 'hell-overlay';
+            overlay.style.cssText = 'position:fixed;top:0;left:0;width:100%;height:100%;pointer-events:none;z-index:9998;overflow:hidden;';
+            const fwColors = ['#ff3333','#ff6600','#ffdd00','#33ff88','#33ccff','#7755ff','#ff33cc','#ffffff','#ffffbb','#bbffee','#ff99cc','#aaeeff','#ccff88'];
+            function launchFirework() {
+                if (!document.getElementById('hell-overlay')) return;
+                const xPct = 10 + Math.random() * 80;
+                const yPct = 5  + Math.random() * 55;
+                const col  = fwColors[Math.floor(Math.random() * fwColors.length)];
+                const cnt  = 14 + Math.floor(Math.random() * 10);
+                for (let i = 0; i < cnt; i++) {
+                    const el = document.createElement('div');
+                    const angle = (i / cnt) * 360 + Math.random() * 14;
+                    const dist  = 38 + Math.random() * 68;
+                    const rad   = angle * Math.PI / 180;
+                    const dx    = (Math.cos(rad) * dist).toFixed(1);
+                    const dy    = (Math.sin(rad) * dist).toFixed(1);
+                    const sz    = 3 + Math.random() * 5;
+                    el.style.cssText = `position:absolute;left:${xPct}%;top:${yPct}%;width:${sz}px;height:${sz}px;border-radius:50%;background:${col};box-shadow:0 0 ${sz*2}px ${col};transform:translate(-50%,-50%);pointer-events:none;transition:transform 1.1s cubic-bezier(0.05,0.9,0.25,1),opacity 1.2s ease-in-out;opacity:1;`;
+                    overlay.appendChild(el);
+                    requestAnimationFrame(() => requestAnimationFrame(() => {
+                        el.style.transform = `translate(calc(-50% + ${dx}px),calc(-50% + ${dy}px))`;
+                        el.style.opacity = '0';
+                    }));
+                    setTimeout(() => el.remove(), 1300);
+                }
+                // center flash
+                const flash = document.createElement('div');
+                flash.style.cssText = `position:absolute;left:${xPct}%;top:${yPct}%;width:6px;height:6px;border-radius:50%;background:#fff;box-shadow:0 0 22px 10px ${col};transform:translate(-50%,-50%) scale(1);pointer-events:none;transition:transform 0.35s ease-out,opacity 0.4s ease-out;opacity:1;`;
+                overlay.appendChild(flash);
+                requestAnimationFrame(() => requestAnimationFrame(() => {
+                    flash.style.transform = 'translate(-50%,-50%) scale(5)';
+                    flash.style.opacity = '0';
+                }));
+                setTimeout(() => flash.remove(), 450);
+            }
+            overlay._interval = setInterval(launchFirework, 900);
+            launchFirework();
+            setTimeout(launchFirework, 380);
+            document.body.appendChild(overlay);
+        }
+        function removeHellOverlay() {
+            const el = document.getElementById('hell-overlay');
+            if (el) { clearInterval(el._interval); el.remove(); }
+        }
+        function createVassaOverlay() {
+            removeVassaOverlay();
+            const overlay = document.createElement('div');
+            overlay.id = 'vassa-overlay';
+            overlay.style.cssText = 'position:fixed;top:0;left:0;width:100%;height:100%;pointer-events:none;z-index:9997;overflow:hidden;';
+            // Floating lotus & flowers
+            const lotusChars = ['🪷','🌸','🌺','🌼','🏵️','🌸','🪷'];
+            for (let i = 0; i < 22; i++) {
+                const el = document.createElement('span');
+                el.textContent = lotusChars[Math.floor(Math.random() * lotusChars.length)];
+                const left = Math.random() * 100;
+                const dur  = 9 + Math.random() * 9;
+                const delay = -(Math.random() * 16);
+                const size = 16 + Math.random() * 22;
+                el.style.cssText = `position:absolute;left:${left}%;bottom:-10%;font-size:${size}px;animation:lotusFloat ${dur}s ${delay}s ease-in-out infinite;opacity:0;`;
+                overlay.appendChild(el);
+            }
+            // Incense smoke wisps (thin wavy lines)
+            const incenseSymbols = ['〜','〰','〜','~','〜'];
+            for (let i = 0; i < 18; i++) {
+                const el = document.createElement('span');
+                el.textContent = incenseSymbols[Math.floor(Math.random() * incenseSymbols.length)];
+                const left = Math.random() * 100;
+                const dur  = 5 + Math.random() * 6;
+                const delay = -(Math.random() * 10);
+                const size  = 9 + Math.random() * 7;
+                el.style.cssText = `position:absolute;left:${left}%;bottom:-5%;font-size:${size}px;color:#c89a50;animation:incenseRise ${dur}s ${delay}s ease-in-out infinite;opacity:0;`;
+                overlay.appendChild(el);
+            }
+            // Candle flame sparkles
+            const candleSymbols = ['🕯️','🕯️','✨','🔆'];
+            for (let i = 0; i < 8; i++) {
+                const el = document.createElement('span');
+                el.textContent = candleSymbols[Math.floor(Math.random() * candleSymbols.length)];
+                const left = Math.random() * 100;
+                const dur  = 7 + Math.random() * 7;
+                const delay = -(Math.random() * 12);
+                const size  = 13 + Math.random() * 14;
+                el.style.cssText = `position:absolute;left:${left}%;bottom:-5%;font-size:${size}px;animation:incenseRise ${dur}s ${delay}s ease-in infinite;opacity:0;`;
+                overlay.appendChild(el);
+            }
+            // Monk spawner — เณรน้อยพูดว่าสาธุ
+            function spawnMonk() {
+                if (!document.getElementById('vassa-overlay')) return;
+                const monk = document.createElement('div');
+                const xPos = 8 + Math.random() * 76;
+                monk.style.cssText = `position:absolute;left:${xPos}%;bottom:${6+Math.random()*18}%;pointer-events:none;text-align:center;transform:scale(0);transition:transform 0.5s cubic-bezier(0.34,1.56,0.64,1),opacity 0.5s;opacity:0;z-index:9999;`;
+                monk.innerHTML = `
+                    <div style="position:relative;display:inline-block;">
+                        <div style="position:absolute;bottom:108%;left:50%;transform:translateX(-50%);background:#fffdf5;border:2.5px solid #d97706;border-radius:16px;padding:5px 14px;font-size:15px;color:#92400e;white-space:nowrap;box-shadow:0 3px 12px rgba(180,83,9,0.25);font-weight:700;font-family:'Prompt',sans-serif;letter-spacing:0.05em;">สาธุ 🙏</div>
+                        <div style="position:absolute;bottom:102%;left:50%;transform:translateX(-50%);width:0;height:0;border-left:7px solid transparent;border-right:7px solid transparent;border-top:8px solid #d97706;"></div>
+                        <span style="font-size:46px;display:block;line-height:1;filter:drop-shadow(0 2px 6px rgba(180,83,9,0.35));">🧘</span>
+                        <div style="font-size:11px;color:#b45309;margin-top:2px;font-family:'Prompt',sans-serif;font-weight:600;">เณรน้อย</div>
+                    </div>`;
+                overlay.appendChild(monk);
+                requestAnimationFrame(() => requestAnimationFrame(() => {
+                    monk.style.transform = 'scale(1)';
+                    monk.style.opacity = '1';
+                }));
+                // bow twice
+                let bowCount = 0;
+                const bowInterval = setInterval(() => {
+                    if (!monk.parentElement || ++bowCount > 2) { clearInterval(bowInterval); return; }
+                    monk.style.transform = 'scale(1.12) rotate(-4deg)';
+                    setTimeout(() => { if (monk.parentElement) monk.style.transform = 'scale(1) rotate(0deg)'; }, 220);
+                }, 900);
+                // disappear after 4.5s
+                setTimeout(() => {
+                    clearInterval(bowInterval);
+                    monk.style.transform = 'scale(0)';
+                    monk.style.opacity = '0';
+                    setTimeout(() => monk.remove(), 500);
+                }, 4500);
+            }
+            spawnMonk();
+            overlay._monkInterval = setInterval(spawnMonk, 5500);
+            document.body.appendChild(overlay);
+        }
+        function removeVassaOverlay() {
+            const el = document.getElementById('vassa-overlay');
+            if (el) { clearInterval(el._monkInterval); el.remove(); }
+        }
+        function createClickBurst(x, y, theme) {
+            if (theme === 'hell') {
+                // pick a new palette (different from last) and apply it
+                const p = randomHellPalette();
+                applyHellPalette(p);
+                // shockwave ring in new accent color
+                const ring = document.createElement('div');
+                ring.style.cssText = `position:fixed;left:${x}px;top:${y}px;width:12px;height:12px;border-radius:50%;border:3px solid ${p.ha};transform:translate(-50%,-50%) scale(0);pointer-events:none;z-index:99999;transition:transform 0.5s ease-out,opacity 0.5s ease-out;opacity:1;`;
+                document.body.appendChild(ring);
+                requestAnimationFrame(() => requestAnimationFrame(() => { ring.style.transform = 'translate(-50%,-50%) scale(24)'; ring.style.opacity = '0'; }));
+                setTimeout(() => ring.remove(), 560);
+                // brief screen tint flash
+                const flash = document.createElement('div');
+                const tint = p.hg.replace(/[\d.]+\)$/, '0.16)');
+                flash.style.cssText = `position:fixed;top:0;left:0;width:100%;height:100%;background:${tint};pointer-events:none;z-index:99998;transition:opacity 0.35s;opacity:1;`;
+                document.body.appendChild(flash);
+                requestAnimationFrame(() => requestAnimationFrame(() => { flash.style.opacity = '0'; }));
+                setTimeout(() => flash.remove(), 400);
+                // burst as glowing dots in new palette colors
+                const burstCols = [p.ha, p.ha2, '#ffffff', '#ffffcc', p.ha, p.ha2];
+                for (let i = 0; i < 20; i++) {
+                    const el = document.createElement('div');
+                    const angle = (i / 20) * 360 + Math.random() * 16;
+                    const dist  = 50 + Math.random() * 100;
+                    const rad   = angle * Math.PI / 180;
+                    const dx    = (Math.cos(rad) * dist).toFixed(1);
+                    const dy    = (Math.sin(rad) * dist).toFixed(1);
+                    const sz    = 5 + Math.random() * 8;
+                    const col   = burstCols[Math.floor(Math.random() * burstCols.length)];
+                    el.style.cssText = `position:fixed;left:${x}px;top:${y}px;width:${sz}px;height:${sz}px;border-radius:50%;background:${col};box-shadow:0 0 ${sz*2}px ${col};pointer-events:none;z-index:99999;transform:translate(-50%,-50%);transition:transform 0.6s cubic-bezier(0.1,0.8,0.2,1),opacity 0.65s ease-out;opacity:1;`;
+                    document.body.appendChild(el);
+                    requestAnimationFrame(() => requestAnimationFrame(() => {
+                        el.style.transform = `translate(calc(-50% + ${dx}px),calc(-50% + ${dy}px)) scale(0.1)`;
+                        el.style.opacity = '0';
+                    }));
+                    setTimeout(() => el.remove(), 700);
+                }
+                return;
+            }
+            const cfgMap = {
+                rain: { chars: ['💧','💦','🌊','💧','〰️'], count: 12 },
+                snow: { chars: ['❄️','❅','❆','✦','❄️','•'], count: 14 },
+            };
+            if (theme === 'vassa') {
+                // Lotus petal burst
+                const petals = ['🪷','🌸','🌺','🌼','✿','🌸','🪷'];
+                for (let i = 0; i < 14; i++) {
+                    const el = document.createElement('span');
+                    el.textContent = petals[Math.floor(Math.random() * petals.length)];
+                    const angle = (i / 14) * 360 + Math.random() * 24;
+                    const dist  = 45 + Math.random() * 80;
+                    const rad   = angle * Math.PI / 180;
+                    const dx    = (Math.cos(rad) * dist).toFixed(1) + 'px';
+                    const dy    = (Math.sin(rad) * dist).toFixed(1) + 'px';
+                    const size  = 15 + Math.random() * 15;
+                    el.style.cssText = `position:fixed;left:${x}px;top:${y}px;font-size:${size}px;pointer-events:none;z-index:99999;transform:translate(-50%,-50%);transition:transform 0.65s cubic-bezier(0.1,0.8,0.3,1),opacity 0.65s ease-out;opacity:1;`;
+                    document.body.appendChild(el);
+                    requestAnimationFrame(() => requestAnimationFrame(() => {
+                        el.style.transform = `translate(calc(-50% + ${dx}),calc(-50% + ${dy})) scale(0.3) rotate(${Math.random()*180}deg)`;
+                        el.style.opacity = '0';
+                    }));
+                    setTimeout(() => el.remove(), 720);
+                }
+                // "สาธุ" text floats up
+                const saathu = document.createElement('div');
+                saathu.textContent = 'สาธุ 🙏';
+                saathu.style.cssText = `position:fixed;left:${x}px;top:${y}px;font-size:20px;font-weight:700;color:#b45309;text-shadow:0 1px 6px rgba(255,255,255,0.9),0 2px 12px rgba(180,83,9,0.3);pointer-events:none;z-index:99999;transform:translate(-50%,-50%);transition:transform 1s ease-out,opacity 1s ease-out;opacity:1;white-space:nowrap;font-family:'Prompt',sans-serif;letter-spacing:0.08em;`;
+                document.body.appendChild(saathu);
+                requestAnimationFrame(() => requestAnimationFrame(() => {
+                    saathu.style.transform = 'translate(-50%,-160%) scale(1.15)';
+                    saathu.style.opacity = '0';
+                }));
+                setTimeout(() => saathu.remove(), 1050);
+                return;
+            }
+            const cfg = cfgMap[theme];
+            if (!cfg) return;
+            for (let i = 0; i < cfg.count; i++) {
+                const el = document.createElement('span');
+                el.textContent = cfg.chars[Math.floor(Math.random() * cfg.chars.length)];
+                const angle = (i / cfg.count) * 360 + Math.random() * 22;
+                const dist  = 50 + Math.random() * 85;
+                const rad   = angle * Math.PI / 180;
+                const dx    = (Math.cos(rad) * dist).toFixed(1) + 'px';
+                const dy    = (Math.sin(rad) * dist).toFixed(1) + 'px';
+                const size  = 14 + Math.random() * 16;
+                el.style.cssText = `position:fixed;left:${x}px;top:${y}px;font-size:${size}px;pointer-events:none;z-index:99999;transform:translate(-50%,-50%);transition:transform 0.55s cubic-bezier(0.1,0.8,0.3,1),opacity 0.55s ease-out;opacity:1;`;
+                document.body.appendChild(el);
+                requestAnimationFrame(() => requestAnimationFrame(() => {
+                    el.style.transform = `translate(calc(-50% + ${dx}),calc(-50% + ${dy})) scale(0.2)`;
+                    el.style.opacity = '0';
+                }));
+                setTimeout(() => el.remove(), 600);
+            }
+        }
+        function setTheme(theme) {
+            document.body.classList.remove('theme-dark', 'theme-dance', 'theme-rain', 'theme-snow', 'theme-hell', 'theme-vassa');
+            if (theme !== 'light') document.body.classList.add('theme-' + theme);
+            localStorage.setItem('theme', theme);
+            if (theme === 'rain') createRainOverlay(); else removeRainOverlay();
+            if (theme === 'snow') createSnowOverlay(); else removeSnowOverlay();
+            if (theme === 'hell') { applyHellPalette(randomHellPalette()); createHellOverlay(); } else removeHellOverlay();
+            if (theme === 'vassa') createVassaOverlay(); else removeVassaOverlay();
+            const labels = { light: '☀️ สว่าง', dark: '🌙 มืด', rain: '🌧️ หน้าฝน', dance: '🪩 แดนซ์', snow: '❄️ หิมะตก', hell: '🔥 ไฟนรก', vassa: '🪷 เข้าพรรษา' };
+            const lbl = document.getElementById('theme-btn-label');
+            if (lbl) lbl.textContent = labels[theme] || labels.light;
+            const dd = document.getElementById('theme-dropdown');
+            if (dd) dd.classList.add('hidden');
+        }
+        document.addEventListener('click', function(e) {
+            const m = document.body.className.match(/theme-(\w+)/);
+            const theme = m ? m[1] : 'light';
+            if (['hell','rain','snow','vassa'].includes(theme)) {
+                createClickBurst(e.clientX, e.clientY, theme);
+            }
+        });
+        function toggleThemeDropdown() {
+            document.getElementById('theme-dropdown').classList.toggle('hidden');
+        }
+        document.addEventListener('click', function(e) {
+            if (!e.target.closest('#theme-dropdown') && !e.target.closest('[onclick="toggleThemeDropdown()"]')) {
+                const dd = document.getElementById('theme-dropdown');
+                if (dd) dd.classList.add('hidden');
+            }
+        });
+
 // ปิด popup เมื่อคลิกนอก content
 document.addEventListener('click', function(event) {
   const popup = document.getElementById('claim-booking-popup');
@@ -637,6 +1484,8 @@ document.addEventListener('DOMContentLoaded', () => {
         // Initialize
         document.addEventListener('DOMContentLoaded', function() {
             try {
+                setTheme(localStorage.getItem('theme') || 'light');
+
                 // Set current date first (no async needed)
                 document.getElementById('record-date').value = new Date().toISOString().split('T')[0];
                 
@@ -646,6 +1495,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 document.getElementById('schedule-year').value = now.getFullYear();
                 document.getElementById('claim-month').value = now.getMonth() + 1;
                 document.getElementById('claim-year').value = now.getFullYear();
+                document.getElementById('export-month-select').value = now.getMonth() + 1;
+                document.getElementById('export-year-input').value = now.getFullYear();
                 
                 // Set default date range for summary (current month)
                 const firstDay = new Date(now.getFullYear(), now.getMonth(), 1);
@@ -656,26 +1507,57 @@ document.addEventListener('DOMContentLoaded', () => {
                 // Wait for Firebase to be ready, then load data
 function waitForFirebase() {
     if (window.firebaseReady === true) {
-        console.log('Firebase ready, loading data...');
-        loadEmployees().then(() => {
-            return loadTasks();
-        }).then(() => {
-            return loadWorkRecords();
-        }).then(() => {
-            return loadHolidays();
-        }).then(() => {
-            return loadClaimBookings();
-        }).then(() => {
-            // Only load summary if we're on the summary tab
-            if (!document.getElementById('summary-tab').classList.contains('hidden')) {
-                loadSummary();
-            }
-            // เพิ่มบรรทัดนี้:
-            generateClaimTable(); // เพื่อให้ claimBookings พร้อมก่อนวาด
-            console.log('All data loaded successfully');
-        }).catch(error => {
-            console.error('Background loading error:', error);
+        console.log('Firebase ready, setting up real-time listeners...');
+
+        function isTabVisible(name) {
+            const el = document.getElementById(name + '-tab');
+            return el && !el.classList.contains('hidden');
+        }
+
+        function refreshActiveUi() {
+            if (isTabVisible('claim')) generateClaimTable();
+            if (isTabVisible('schedule')) generateSchedule();
+            if (isTabVisible('history')) loadHistory();
+            if (isTabVisible('summary')) loadSummary();
+        }
+
+        window.dbOnValue(window.dbRef(window.db, 'employees'), snapshot => {
+            employees = snapshot.val() || {};
+            updateEmployeeSelects();
+            if (isTabVisible('employees')) loadEmployeesList();
+            if (isTabVisible('claim')) generateClaimTable();
         });
+
+        window.dbOnValue(window.dbRef(window.db, 'tasks'), snapshot => {
+            tasks = snapshot.val() || {};
+            updateTaskSelects();
+            if (isTabVisible('tasks')) loadTasksList();
+        });
+
+        window.dbOnValue(window.dbRef(window.db, 'workRecords'), snapshot => {
+            workRecords = snapshot.val() || {};
+            refreshActiveUi();
+        });
+
+        window.dbOnValue(window.dbRef(window.db, 'holidays'), snapshot => {
+            holidays = snapshot.val() || {};
+            updateHolidayList();
+            if (isTabVisible('claim')) generateClaimTable();
+            if (isTabVisible('schedule')) generateSchedule();
+        });
+
+        window.dbOnValue(window.dbRef(window.db, 'claimBookings'), snapshot => {
+            claimBookings = snapshot.val() || {};
+            if (isTabVisible('claim')) generateClaimTable();
+        });
+
+        window.dbOnValue(window.dbRef(window.db, 'schedules'), snapshot => {
+            scheduleData = snapshot.val() || {};
+            if (isTabVisible('claim')) generateClaimTable();
+            if (isTabVisible('schedule')) generateSchedule();
+        });
+
+        console.log('Real-time listeners active');
     } else if (window.firebaseReady === false) {
                         console.log('Firebase failed to initialize, using offline mode');
                         // Initialize empty data for offline mode
@@ -751,6 +1633,8 @@ function waitForFirebase() {
                             generateSchedule();
                         } else if (tabName === 'claim') {
                             generateClaimTable();
+                        } else if (tabName === 'export') {
+                            loadExportTab();
                         }
                     } catch (error) {
                         console.error('Error loading tab data:', error);
@@ -849,6 +1733,18 @@ function waitForFirebase() {
                 });
             }
             
+            // Update export employee select
+            const exportSelect = document.getElementById('export-emp-select');
+            if (exportSelect) {
+                exportSelect.innerHTML = '<option value="">เลือกพนักงาน</option>';
+                Object.entries(employees).forEach(([id, emp]) => {
+                    const option = document.createElement('option');
+                    option.value = id;
+                    option.textContent = `${emp.firstname} ${emp.lastname}`;
+                    exportSelect.appendChild(option);
+                });
+            }
+
             // Update person checkboxes for summary
             updatePersonCheckboxes();
         }
@@ -949,9 +1845,10 @@ function waitForFirebase() {
             };
             
             try {
-                await window.dbPush(window.dbRef(window.db, 'employees'), employeeData);
+                const newRef = await window.dbPush(window.dbRef(window.db, 'employees'), employeeData);
+                employees[newRef.key] = employeeData;
                 hideAddEmployeeForm();
-                loadEmployees();
+                updateEmployeeSelects();
                 loadEmployeesList();
                 alert('เพิ่มพนักงานสำเร็จ');
             } catch (error) {
@@ -1027,8 +1924,9 @@ function waitForFirebase() {
             
             try {
                 await window.dbUpdate(window.dbRef(window.db, `employees/${id}`), employeeData);
+                employees[id] = { ...employees[id], ...employeeData };
                 hideAddEmployeeForm();
-                loadEmployees();
+                updateEmployeeSelects();
                 loadEmployeesList();
                 alert('อัปเดตพนักงานสำเร็จ');
                 
@@ -1048,7 +1946,7 @@ function waitForFirebase() {
                 try {
                     await window.dbRemove(window.dbRef(window.db, `employees/${id}`));
                     delete employees[id];
-                    loadEmployees();
+                    updateEmployeeSelects();
                     loadEmployeesList();
                     alert('ลบพนักงานสำเร็จ');
                 } catch (error) {
@@ -1195,9 +2093,10 @@ function waitForFirebase() {
             };
             
             try {
-                await window.dbPush(window.dbRef(window.db, 'tasks'), taskData);
+                const newRef = await window.dbPush(window.dbRef(window.db, 'tasks'), taskData);
+                tasks[newRef.key] = taskData;
                 hideAddTaskForm();
-                loadTasks();
+                updateTaskSelects();
                 loadTasksList();
                 alert('เพิ่มภาระงานสำเร็จ');
             } catch (error) {
@@ -1268,8 +2167,9 @@ function waitForFirebase() {
             
             try {
                 await window.dbUpdate(window.dbRef(window.db, `tasks/${id}`), taskData);
+                tasks[id] = { ...tasks[id], ...taskData };
                 hideAddTaskForm();
-                loadTasks();
+                updateTaskSelects();
                 loadTasksList();
                 alert('อัปเดตภาระงานสำเร็จ');
                 
@@ -1288,7 +2188,8 @@ function waitForFirebase() {
             if (confirm('ต้องการลบภาระงานนี้หรือไม่?')) {
                 try {
                     await window.dbRemove(window.dbRef(window.db, `tasks/${id}`));
-                    loadTasks();
+                    delete tasks[id];
+                    updateTaskSelects();
                     loadTasksList();
                     alert('ลบภาระงานสำเร็จ');
                 } catch (error) {
@@ -1647,10 +2548,7 @@ function waitForFirebase() {
                 
                 // Show loading
                 container.innerHTML = '<div class="text-center py-8"><div class="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-emerald-600"></div><p class="mt-2 text-gray-600">กำลังสร้างตาราง...</p></div>';
-                
-                // Load existing schedule data
-                const scheduleData = await loadScheduleData();
-                
+
                 // Store schedule data for export
                 currentScheduleData.scheduleData = scheduleData;
                 
@@ -1886,8 +2784,6 @@ async function generateClaimTable() {
     
     // Body
     html += '<tbody>';
-    // Load schedule data once
-    const scheduleData = await loadScheduleData();
     Object.entries(employees).forEach(([empId, emp]) => {
       if (!emp) return;
       html += '<tr>';
@@ -2420,10 +3316,10 @@ function showClaimDetails(empId, date, day) {
     const dayOfWeek = ['อาทิตย์', 'จันทร์', 'อังคาร', 'พุธ', 'พฤหัสบดี', 'ศุกร์', 'เสาร์'][new Date(date).getDay()];
     
     // ตรวจสอบบันทึกการทำงาน/เบิก
-    const dayRecords = workRecords ? Object.values(workRecords).filter(record => 
-        record && record.employeeId === empId && 
-        (record.date === dateStr || record.claimDate === dateStr)
-    ) : [];
+    const dayRecords = workRecords ? Object.entries(workRecords)
+        .filter(([id, record]) => record && record.employeeId === empId &&
+            (record.date === dateStr || record.claimDate === dateStr))
+        .map(([id, record]) => ({...record, _id: id})) : [];
     
     let statusHtml = '';
     let detailsHtml = '';
@@ -2445,9 +3341,15 @@ function showClaimDetails(empId, date, day) {
                 }
                 detailsHtml += `
                     <div class="border-l-4 border-green-500 pl-4 mb-3">
-                        <p class="font-medium">ทำงานปกติ</p>
+                        <div class="flex justify-between items-start">
+                            <p class="font-medium">ทำงานปกติ</p>
+                            <div class="flex gap-1 ml-2">
+                                <button onclick="openQuickRecordPopup('${empId}','${dateStr}','${record._id}')" class="text-xs bg-blue-100 hover:bg-blue-200 text-blue-700 px-2 py-1 rounded">แก้ไข</button>
+                                <button onclick="deleteWorkRecord('${record._id}','${empId}','${dateStr}',${day})" class="text-xs bg-red-100 hover:bg-red-200 text-red-700 px-2 py-1 rounded">ลบ</button>
+                            </div>
+                        </div>
                         ${tasksHtml ? `<ul class="text-sm text-gray-600 mt-1 ml-4">${tasksHtml}</ul>` : ''}
-                        ${record.other ? `<p class="text-sm text-gray-600 mt-1">งานอื่น ๆ : ${record.other}</p>` : ''}
+                        ${getOtherHtml(record)}
                     </div>
                 `;
             });
@@ -2464,9 +3366,15 @@ function showClaimDetails(empId, date, day) {
                 }
                 detailsHtml += `
                     <div class="border-l-4 border-green-500 pl-4 mb-3">
-                        <p class="font-medium">เวรเย็น - ทำงานวันที่ ${workDate}</p>
+                        <div class="flex justify-between items-start">
+                            <p class="font-medium">เวรเย็น - ทำงานวันที่ ${workDate}</p>
+                            <div class="flex gap-1 ml-2">
+                                <button onclick="openQuickRecordPopup('${empId}','${dateStr}','${record._id}')" class="text-xs bg-blue-100 hover:bg-blue-200 text-blue-700 px-2 py-1 rounded">แก้ไข</button>
+                                <button onclick="deleteWorkRecord('${record._id}','${empId}','${dateStr}',${day})" class="text-xs bg-red-100 hover:bg-red-200 text-red-700 px-2 py-1 rounded">ลบ</button>
+                            </div>
+                        </div>
                         ${tasksHtml ? `<ul class="text-sm text-gray-600 mt-1 ml-4">${tasksHtml}</ul>` : ''}
-                        ${record.other ? `<p class="text-sm text-gray-600 mt-1">งานอื่น ๆ : ${record.other}</p>` : ''}
+                        ${getOtherHtml(record)}
                     </div>
                 `;
             });
@@ -2483,9 +3391,15 @@ function showClaimDetails(empId, date, day) {
             }
             detailsHtml += `
                 <div class="border-l-4 border-yellow-500 pl-4 mb-3">
-                    <p class="font-medium">เวรเย็น - ทำงานวันที่ ${workDate}</p>
+                    <div class="flex justify-between items-start">
+                        <p class="font-medium">เวรเย็น - ทำงานวันที่ ${workDate}</p>
+                        <div class="flex gap-1 ml-2">
+                            <button onclick="openQuickRecordPopup('${empId}','${dateStr}','${record._id}')" class="text-xs bg-blue-100 hover:bg-blue-200 text-blue-700 px-2 py-1 rounded">แก้ไข</button>
+                            <button onclick="deleteWorkRecord('${record._id}','${empId}','${dateStr}',${day})" class="text-xs bg-red-100 hover:bg-red-200 text-red-700 px-2 py-1 rounded">ลบ</button>
+                        </div>
+                    </div>
                     ${tasksHtml ? `<ul class="text-sm text-gray-600 mt-1 ml-4">${tasksHtml}</ul>` : ''}
-                    ${record.other ? `<p class="text-sm text-gray-600 mt-1">หมายเหตุ: ${record.other}</p>` : ''}
+                    ${getOtherHtml(record)}
                     <p class="text-sm text-yellow-700 mt-2">ต้องทำเวรเย็นอีก 1 วัน เพื่อให้ครบ 2 วัน</p>
                 </div>
             `;
@@ -2502,9 +3416,15 @@ function showClaimDetails(empId, date, day) {
                 }
                 detailsHtml += `
                     <div class="border-l-4 border-green-500 pl-4 mb-3">
-                        <p class="font-medium">เวรวันหยุด - ทำงานวันที่ ${workDate}</p>
+                        <div class="flex justify-between items-start">
+                            <p class="font-medium">เวรวันหยุด - ทำงานวันที่ ${workDate}</p>
+                            <div class="flex gap-1 ml-2">
+                                <button onclick="openQuickRecordPopup('${empId}','${dateStr}','${record._id}')" class="text-xs bg-blue-100 hover:bg-blue-200 text-blue-700 px-2 py-1 rounded">แก้ไข</button>
+                                <button onclick="deleteWorkRecord('${record._id}','${empId}','${dateStr}',${day})" class="text-xs bg-red-100 hover:bg-red-200 text-red-700 px-2 py-1 rounded">ลบ</button>
+                            </div>
+                        </div>
                         ${tasksHtml ? `<ul class="text-sm text-gray-600 mt-1 ml-4">${tasksHtml}</ul>` : ''}
-                        ${record.other ? `<p class="text-sm text-gray-600 mt-1">งานอื่น ๆ : ${record.other}</p>` : ''}
+                        ${getOtherHtml(record)}
                     </div>
                 `;
             });
@@ -2523,6 +3443,29 @@ function showClaimDetails(empId, date, day) {
         detailsHtml = '<p class="text-gray-600">ไม่มีการบันทึกการทำงานในวันนี้</p>';
     }
 
+    // ข้อมูลการจองวันเบิก
+    const bookings = Object.entries(claimBookings || {}).filter(([, b]) =>
+        b && b.employeeId === empId && b.date === dateStr
+    );
+    let bookingHtml = '';
+    if (bookings.length > 0) {
+        bookingHtml = bookings.map(([bid, b]) => {
+            const forDatesText = (b.forDates && b.forDates.length > 0)
+                ? b.forDates.map(d => new Date(d + 'T00:00:00').toLocaleDateString('th-TH')).join(', ')
+                : '-';
+            return `<div class="flex justify-between items-start border-l-4 border-blue-400 pl-3 py-1">
+                <div>
+                    <p class="text-sm font-medium text-blue-800">จองวันเบิก</p>
+                    ${b.forDates && b.forDates.length > 0 ? `<p class="text-xs text-gray-600">เบิกแทนวันที่: ${forDatesText}</p>` : ''}
+                </div>
+                <div class="flex gap-1 ml-2">
+                    <button onclick="editClaimBooking('${bid}')" class="text-xs bg-blue-100 hover:bg-blue-200 text-blue-700 px-2 py-1 rounded">แก้ไข</button>
+                    <button onclick="deleteClaimBooking('${bid}')" class="text-xs bg-red-100 hover:bg-red-200 text-red-700 px-2 py-1 rounded">ลบ</button>
+                </div>
+            </div>`;
+        }).join('');
+    }
+
     const popupContent = document.getElementById('claim-popup-content');
     popupContent.innerHTML = `
         <div>
@@ -2537,10 +3480,13 @@ function showClaimDetails(empId, date, day) {
             <div class="mb-4">
                 ${statusHtml}
             </div>
-            <div>
+            <div class="mb-3">
                 <h5 class="font-medium text-gray-800 mb-2">รายละเอียด:</h5>
                 ${detailsHtml}
             </div>
+            ${bookingHtml ? `<div class="mb-3"><h5 class="font-medium text-gray-800 mb-2">การจองวันเบิก:</h5>${bookingHtml}</div>` : ''}
+            <button onclick="openQuickRecordPopup('${empId}', '${dateStr}')" class="btn-primary px-4 py-2 rounded-lg mt-2 w-full">+ เพิ่มงานที่ทำ</button>
+            <button onclick="openQuickBookingPopup('${empId}', '${dateStr}')" class="btn-secondary px-4 py-2 rounded-lg mt-2 w-full">จองวันเบิก</button>
         </div>
     `;
     document.getElementById('claim-popup').classList.remove('hidden');
@@ -2550,7 +3496,177 @@ function showClaimDetails(empId, date, day) {
             document.getElementById('claim-popup').classList.add('hidden');
         }
 
-        
+        function openQuickRecordPopup(empId, dateStr, recordId = null) {
+            const emp = employees[empId];
+            if (!emp) return;
+            closeClaimPopup();
+            document.getElementById('qr-emp-id').value = empId;
+            document.getElementById('qr-date').value = dateStr;
+            document.getElementById('qr-record-id').value = recordId || '';
+            document.getElementById('qr-emp-display').textContent = `${emp.firstname} ${emp.lastname}`;
+            document.getElementById('qr-date-display').textContent = new Date(dateStr + 'T00:00:00').toLocaleDateString('th-TH');
+            document.querySelector('#quick-record-popup h3').textContent = recordId ? 'แก้ไขงานที่ทำ' : 'เพิ่มงานที่ทำ';
+
+            const container = document.getElementById('qr-task-entries');
+            container.innerHTML = '';
+            document.getElementById('qr-other-entries').innerHTML = '';
+            document.getElementById('qr-type').value = '';
+            document.getElementById('qr-workdate-section').classList.add('hidden');
+            document.getElementById('qr-workdate').value = dateStr;
+
+            if (recordId && workRecords[recordId]) {
+                const rec = workRecords[recordId];
+                document.getElementById('qr-type').value = rec.type || '';
+                const otherItems = rec.others && rec.others.length > 0
+                    ? rec.others
+                    : (rec.other && rec.other.trim() ? [{work: rec.other.trim(), amount: ''}] : []);
+                otherItems.forEach(o => {
+                    addOtherEntry(o.work, o.amount);
+                });
+                if (rec.type === 'evening' || rec.type === 'holiday') {
+                    document.getElementById('qr-workdate-section').classList.remove('hidden');
+                    document.getElementById('qr-workdate').value = rec.date || dateStr;
+                }
+                (rec.tasks || []).forEach(t => {
+                    addQuickTaskEntry();
+                    const entries = container.querySelectorAll('.qr-task-entry');
+                    const last = entries[entries.length - 1];
+                    last.querySelector('.qr-task-select').value = t.taskId;
+                    last.querySelector('.qr-task-amount').value = t.amount;
+                });
+            }
+            if (container.querySelectorAll('.qr-task-entry').length === 0) addQuickTaskEntry();
+            document.getElementById('quick-record-popup').classList.remove('hidden');
+        }
+
+        function closeQuickRecordPopup() {
+            document.getElementById('quick-record-popup').classList.add('hidden');
+        }
+
+        function toggleQuickWorkDate() {
+            const type = document.getElementById('qr-type').value;
+            const section = document.getElementById('qr-workdate-section');
+            if (type === 'evening' || type === 'holiday') {
+                section.classList.remove('hidden');
+            } else {
+                section.classList.add('hidden');
+            }
+        }
+
+        function addQuickTaskEntry() {
+            const container = document.getElementById('qr-task-entries');
+            const entry = document.createElement('div');
+            entry.className = 'qr-task-entry grid grid-cols-1 md:grid-cols-3 gap-2 mb-2';
+            entry.innerHTML = `
+                <select class="qr-task-select input-field">
+                    <option value="">เลือกภาระงาน</option>
+                </select>
+                <input type="number" class="qr-task-amount input-field" placeholder="ปริมาณงาน" min="0">
+                <button type="button" onclick="removeQuickTaskEntry(this)" class="btn-secondary px-3 py-2 rounded-lg">ลบ</button>
+            `;
+            container.appendChild(entry);
+            const select = entry.querySelector('.qr-task-select');
+            Object.entries(tasks).forEach(([id, task]) => {
+                const option = document.createElement('option');
+                option.value = id;
+                option.textContent = `${task.name} (${task.unit})`;
+                select.appendChild(option);
+            });
+        }
+
+        function removeQuickTaskEntry(button) {
+            const entries = document.querySelectorAll('.qr-task-entry');
+            if (entries.length > 1) {
+                button.closest('.qr-task-entry').remove();
+            }
+        }
+
+        function addOtherEntry(work = '', amount = '') {
+            const container = document.getElementById('qr-other-entries');
+            const entry = document.createElement('div');
+            entry.className = 'qr-other-entry grid grid-cols-1 md:grid-cols-3 gap-2 mb-2';
+            entry.innerHTML = `
+                <input type="text" class="qr-other-work input-field" placeholder="รายละเอียดงาน" value="${work.replace(/"/g,'&quot;')}">
+                <input type="text" class="qr-other-amount input-field" placeholder="ปริมาณ/หน่วย" value="${amount.replace(/"/g,'&quot;')}">
+                <button type="button" onclick="removeOtherEntry(this)" class="btn-secondary px-3 py-2 rounded-lg">ลบ</button>
+            `;
+            container.appendChild(entry);
+        }
+
+        function removeOtherEntry(button) {
+            button.closest('.qr-other-entry').remove();
+        }
+
+        function getOtherHtml(record) {
+            const items = record.others && record.others.length > 0
+                ? record.others
+                : (record.other && record.other.trim() ? [{work: record.other.trim(), amount: ''}] : []);
+            return items.map(o => `<p class="text-sm text-gray-600 mt-1">งานอื่น ๆ : ${o.work}${o.amount ? ' ' + o.amount : ''}</p>`).join('');
+        }
+
+        async function saveQuickRecord() {
+            const empId = document.getElementById('qr-emp-id').value;
+            const claimDate = document.getElementById('qr-date').value;
+            const recordId = document.getElementById('qr-record-id').value;
+            const type = document.getElementById('qr-type').value;
+            if (!type) { alert('กรุณาเลือกประเภทการบันทึก'); return; }
+
+            let workDate = claimDate;
+            if (type === 'evening' || type === 'holiday') {
+                workDate = document.getElementById('qr-workdate').value;
+                if (!workDate) { alert('กรุณาระบุวันที่ทำงาน'); return; }
+            }
+
+            const taskEntries = [];
+            document.querySelectorAll('.qr-task-entry').forEach(entry => {
+                const taskId = entry.querySelector('.qr-task-select').value;
+                const amount = entry.querySelector('.qr-task-amount').value;
+                if (taskId && amount) taskEntries.push({ taskId, amount: parseFloat(amount) });
+            });
+
+            const others = [];
+            document.querySelectorAll('.qr-other-entry').forEach(entry => {
+                const work = entry.querySelector('.qr-other-work').value.trim();
+                const amount = entry.querySelector('.qr-other-amount').value.trim();
+                if (work) others.push({ work, amount });
+            });
+
+            const recordData = {
+                employeeId: empId,
+                date: workDate,
+                type: type,
+                claimDate: (type === 'normal') ? null : claimDate,
+                tasks: taskEntries,
+                others: others,
+                timestamp: Date.now()
+            };
+
+            try {
+                if (recordId) {
+                    await window.dbSet(window.dbRef(window.db, `workRecords/${recordId}`), recordData);
+                } else {
+                    await window.dbPush(window.dbRef(window.db, 'workRecords'), recordData);
+                }
+                alert('บันทึกข้อมูลสำเร็จ');
+                closeQuickRecordPopup();
+                await loadWorkRecords();
+                showClaimDetails(empId, claimDate, new Date(claimDate + 'T00:00:00').getDate());
+            } catch(err) {
+                alert('เกิดข้อผิดพลาด: ' + err.message);
+            }
+        }
+
+        async function deleteWorkRecord(recordId, empId, dateStr, day) {
+            if (!confirm('ต้องการลบรายการนี้ใช่ไหม?')) return;
+            try {
+                await window.dbRemove(window.dbRef(window.db, `workRecords/${recordId}`));
+                await loadWorkRecords();
+                showClaimDetails(empId, dateStr, day);
+            } catch(err) {
+                alert('เกิดข้อผิดพลาด: ' + err.message);
+            }
+        }
+
 function exportSchedulePDF() {
   // 1. สร้าง overlay สำหรับวันที่ ถ้ายังไม่มี
   let pdfOverlay = document.getElementById('pdf-export-table-overlay');
@@ -2614,6 +3730,258 @@ function exportSchedulePDF() {
   });
 }
         
+        // =================== EXPORT DOCX FUNCTIONS ===================
+
+        function loadExportTab() {
+            const sel = document.getElementById('export-emp-select');
+            if (!sel) return;
+            sel.innerHTML = '<option value="">เลือกพนักงาน</option>';
+            Object.entries(employees).forEach(([id, emp]) => {
+                const opt = document.createElement('option');
+                opt.value = id;
+                opt.textContent = `${emp.firstname} ${emp.lastname}`;
+                sel.appendChild(opt);
+            });
+        }
+
+        function toThaiDigit(n) {
+            return String(n).replace(/\d/g, d => '๐๑๒๓๔๕๖๗๘๙'[parseInt(d)]);
+        }
+
+        function escXml(s) {
+            return String(s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+        }
+
+        function buildDocumentXml(emp, monthNum, yearCE, dayMap) {
+            const yearBE = yearCE + 543;
+            const THAI_MONTHS = ['มกราคม','กุมภาพันธ์','มีนาคม','เมษายน','พฤษภาคม','มิถุนายน','กรกฎาคม','สิงหาคม','กันยายน','ตุลาคม','พฤศจิกายน','ธันวาคม'];
+            const FONT = 'TH SarabunPSK';
+            const SZ = 32;
+
+            function dateToThai(dateStr) {
+                const [y, m, d] = dateStr.split('-').map(Number);
+                return `${toThaiDigit(d)}/${toThaiDigit(m)}/${toThaiDigit(y + 543)}`;
+            }
+
+            function mkRPr(bold) {
+                return `<w:rPr><w:rFonts w:ascii="${FONT}" w:hAnsi="${FONT}" w:cs="${FONT}" w:hint="cs"/><w:color w:val="000000"/><w:sz w:val="${SZ}"/><w:szCs w:val="${SZ}"/>${bold ? '<w:b/><w:bCs/>' : ''}<w:lang w:val="th-TH" w:bidi="th-TH"/></w:rPr>`;
+            }
+
+            function mkPara(text, align, bold) {
+                const ppr = `<w:pPr><w:spacing w:before="0" w:after="0"/><w:jc w:val="${align || 'left'}"/><w:rPr><w:rFonts w:ascii="${FONT}" w:hAnsi="${FONT}" w:cs="${FONT}"/><w:sz w:val="${SZ}"/><w:szCs w:val="${SZ}"/>${bold ? '<w:b/><w:bCs/>' : ''}</w:rPr></w:pPr>`;
+                const thaiText = text ? toThaiDigit(text) : text;
+                const run = thaiText ? `<w:r>${mkRPr(bold)}<w:t xml:space="preserve">${escXml(thaiText)}</w:t></w:r>` : '';
+                return `<w:p>${ppr}${run}</w:p>`;
+            }
+
+            const BORDERS = `<w:tcBorders><w:top w:val="single" w:sz="4" w:space="0" w:color="000000"/><w:left w:val="single" w:sz="4" w:space="0" w:color="000000"/><w:bottom w:val="single" w:sz="4" w:space="0" w:color="000000"/><w:right w:val="single" w:sz="4" w:space="0" w:color="000000"/></w:tcBorders>`;
+
+            function mkCell(width, text, opts) {
+                const { align='left', bold=false, vMerge=null, colSpan=null, vAlign=null } = opts || {};
+                let tcPr = `<w:tcW w:w="${width}" w:type="dxa"/>`;
+                if (colSpan) tcPr += `<w:gridSpan w:val="${colSpan}"/>`;
+                if (vMerge === 'start') tcPr += `<w:vMerge w:val="restart"/>`;
+                else if (vMerge === 'cont') tcPr += `<w:vMerge/>`;
+                if (vAlign) tcPr += `<w:vAlign w:val="${vAlign}"/>`;
+                tcPr += BORDERS;
+                return `<w:tc><w:tcPr>${tcPr}</w:tcPr>${mkPara(text, align, bold)}</w:tc>`;
+            }
+
+            // column widths matching template exactly
+            const C = [1551, 882, 964, 4315, 1631, 1248];
+
+            const hdr1 = `<w:tr><w:trPr><w:tblHeader/></w:trPr>
+${mkCell(C[0],'วัน เดือน ปี',{align:'center',bold:true,vMerge:'start',vAlign:'center'})}
+${mkCell(C[1]+C[2],'เวลา',{align:'center',bold:true,colSpan:2,vAlign:'center'})}
+${mkCell(C[3],'งานที่ทำ',{align:'center',bold:true,vMerge:'start',vAlign:'center'})}
+${mkCell(C[4],'ปริมาณงาน',{align:'center',bold:true,vMerge:'start',vAlign:'center'})}
+${mkCell(C[5],'ผู้ตรวจสอบ',{align:'center',bold:true,vMerge:'start',vAlign:'center'})}
+</w:tr>`;
+
+            const hdr2 = `<w:tr><w:trPr><w:tblHeader/></w:trPr>
+${mkCell(C[0],'',{align:'center',vMerge:'cont',vAlign:'center'})}
+${mkCell(C[1],'เริ่มงาน',{align:'center',bold:true,vAlign:'center'})}
+${mkCell(C[2],'เลิกงาน',{align:'center',bold:true,vAlign:'center'})}
+${mkCell(C[3],'',{align:'center',vMerge:'cont',vAlign:'center'})}
+${mkCell(C[4],'',{align:'center',vMerge:'cont',vAlign:'center'})}
+${mkCell(C[5],'',{align:'center',vMerge:'cont',vAlign:'center'})}
+</w:tr>`;
+
+            const sortedDates = Object.keys(dayMap).sort();
+            let dataRows = '';
+            sortedDates.forEach(dateStr => {
+                const items = dayMap[dateStr];
+                const multi = items.length > 1;
+                const thaiDate = dateToThai(dateStr);
+                items.forEach((item, idx) => {
+                    const isFirst = idx === 0;
+                    const vm = multi ? (isFirst ? 'start' : 'cont') : null;
+                    if (isFirst) {
+                        dataRows += `<w:tr><w:trPr><w:trHeight w:val="263" w:hRule="atLeast"/></w:trPr>
+${mkCell(C[0],thaiDate,{align:'center',vMerge:vm})}
+${mkCell(C[1],'๐๘.๐๐',{align:'center',vMerge:vm})}
+${mkCell(C[2],'๑๖.๐๐',{align:'center',vMerge:vm})}
+${mkCell(C[3],item.work,{align:'left'})}
+${mkCell(C[4],item.amount,{align:'center'})}
+${mkCell(C[5],'',{align:'center',vMerge:vm})}
+</w:tr>`;
+                    } else {
+                        dataRows += `<w:tr><w:trPr><w:trHeight w:val="263" w:hRule="atLeast"/></w:trPr>
+${mkCell(C[0],'',{align:'center',vMerge:'cont'})}
+${mkCell(C[1],'',{align:'center',vMerge:'cont'})}
+${mkCell(C[2],'',{align:'center',vMerge:'cont'})}
+${mkCell(C[3],item.work,{align:'left'})}
+${mkCell(C[4],item.amount,{align:'center'})}
+${mkCell(C[5],'',{align:'center',vMerge:'cont'})}
+</w:tr>`;
+                    }
+                });
+            });
+
+            const tableW = C.reduce((a,b) => a+b, 0);
+            const tblBorders = `<w:tblBorders><w:top w:val="single" w:sz="4" w:space="0" w:color="000000"/><w:left w:val="single" w:sz="4" w:space="0" w:color="000000"/><w:bottom w:val="single" w:sz="4" w:space="0" w:color="000000"/><w:right w:val="single" w:sz="4" w:space="0" w:color="000000"/><w:insideH w:val="single" w:sz="4" w:space="0" w:color="000000"/><w:insideV w:val="single" w:sz="4" w:space="0" w:color="000000"/></w:tblBorders>`;
+            const tblCellMar = `<w:tblCellMar><w:top w:w="0" w:type="dxa"/><w:left w:w="108" w:type="dxa"/><w:bottom w:w="0" w:type="dxa"/><w:right w:w="108" w:type="dxa"/></w:tblCellMar>`;
+
+            const table = `<w:tbl>
+<w:tblPr><w:tblW w:w="${tableW}" w:type="dxa"/><w:tblLayout w:type="fixed"/>${tblBorders}${tblCellMar}</w:tblPr>
+<w:tblGrid>${C.map(w => `<w:gridCol w:w="${w}"/>`).join('')}</w:tblGrid>
+${hdr1}${hdr2}${dataRows}
+</w:tbl>`;
+
+            return `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<w:document xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships"
+ xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main">
+<w:body>
+${mkPara('บุคคลภายนอกช่วยปฏิบัติงานราชการ','center')}
+${mkPara('สำนักงานโรคติดต่อทางสาธารณสุข สำนักอนามัย','center')}
+${mkPara('ประจำเดือน ' + THAI_MONTHS[monthNum-1] + ' ' + toThaiDigit(yearBE),'center')}
+${mkPara('ชื่อ ' + emp.firstname + ' ' + emp.lastname,'center')}
+${mkPara('ตำแหน่ง  ' + (emp.position || ''),'center')}
+${table}
+<w:sectPr>
+ <w:pgSz w:w="11906" w:h="16838"/>
+ <w:pgMar w:top="720" w:right="720" w:bottom="720" w:left="720"/>
+</w:sectPr>
+</w:body>
+</w:document>`;
+        }
+
+        async function generateExportDoc() {
+            const empId = document.getElementById('export-emp-select').value;
+            const month = parseInt(document.getElementById('export-month-select').value);
+            const year = parseInt(document.getElementById('export-year-input').value);
+
+            if (!empId) { alert('กรุณาเลือกพนักงาน'); return; }
+            const emp = employees[empId];
+            if (!emp) { alert('ไม่พบข้อมูลพนักงาน'); return; }
+
+            if (!window.JSZip) { alert('ยังโหลด JSZip ไม่เสร็จ กรุณารอสักครู่แล้วลองใหม่'); return; }
+
+            const monthStr = `${year}-${String(month).padStart(2,'0')}`;
+            const recs = Object.values(workRecords || {}).filter(r => {
+                const effDate = r.claimDate || r.date;
+                return r && r.employeeId === empId && effDate && effDate.startsWith(monthStr);
+            }).sort((a,b) => {
+                const da = a.claimDate || a.date;
+                const db = b.claimDate || b.date;
+                return da.localeCompare(db);
+            });
+
+            const dayMap = {};
+            recs.forEach(r => {
+                const effDate = r.claimDate || r.date;
+                if (!dayMap[effDate]) dayMap[effDate] = [];
+                (r.tasks || []).forEach(t => {
+                    const ti = tasks[t.taskId];
+                    if (ti) dayMap[effDate].push({ work: ti.name, amount: `${t.amount} ${ti.unit}` });
+                });
+                const otherItems = r.others && r.others.length > 0
+                    ? r.others
+                    : (r.other && r.other.trim() ? [{work: r.other.trim(), amount: ''}] : []);
+                otherItems.forEach(o => {
+                    if (o.work) dayMap[effDate].push({ work: o.work, amount: o.amount || '' });
+                });
+            });
+            Object.keys(dayMap).forEach(d => {
+                if (dayMap[d].length === 0) dayMap[d].push({ work: '', amount: '' });
+            });
+
+            if (Object.keys(dayMap).length === 0) {
+                alert('ไม่พบข้อมูลการทำงานในเดือนที่เลือก');
+                return;
+            }
+
+            try {
+                const docXml = buildDocumentXml(emp, month, year, dayMap);
+
+                const contentTypes = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types">
+<Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/>
+<Default Extension="xml" ContentType="application/xml"/>
+<Override PartName="/word/document.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.document.main+xml"/>
+<Override PartName="/word/styles.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.styles+xml"/>
+</Types>`;
+
+                const rels = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">
+<Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="word/document.xml"/>
+</Relationships>`;
+
+                const docRels = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">
+<Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/styles" Target="styles.xml"/>
+</Relationships>`;
+
+                const stylesXml = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<w:styles xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main">
+<w:docDefaults>
+<w:rPrDefault><w:rPr>
+<w:rFonts w:ascii="TH SarabunPSK" w:hAnsi="TH SarabunPSK" w:cs="TH SarabunPSK"/>
+<w:sz w:val="32"/><w:szCs w:val="32"/>
+<w:lang w:val="th-TH" w:bidi="th-TH"/>
+</w:rPr></w:rPrDefault>
+<w:pPrDefault><w:pPr><w:spacing w:after="0"/></w:pPr></w:pPrDefault>
+</w:docDefaults>
+<w:style w:type="paragraph" w:default="1" w:styleId="Normal">
+<w:name w:val="Normal"/>
+<w:pPr><w:spacing w:after="0"/></w:pPr>
+<w:rPr>
+<w:rFonts w:ascii="TH SarabunPSK" w:hAnsi="TH SarabunPSK" w:cs="TH SarabunPSK"/>
+<w:sz w:val="32"/><w:szCs w:val="32"/>
+<w:lang w:val="th-TH" w:bidi="th-TH"/>
+</w:rPr>
+</w:style>
+</w:styles>`;
+
+                const zip = new JSZip();
+                zip.file('[Content_Types].xml', contentTypes);
+                zip.file('_rels/.rels', rels);
+                zip.file('word/document.xml', docXml);
+                zip.file('word/styles.xml', stylesXml);
+                zip.file('word/_rels/document.xml.rels', docRels);
+
+                const buffer = await zip.generateAsync({ type: 'arraybuffer', compression: 'DEFLATE' });
+                const blob = new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' });
+
+                const THAI_MONTHS = ['มกราคม','กุมภาพันธ์','มีนาคม','เมษายน','พฤษภาคม','มิถุนายน','กรกฎาคม','สิงหาคม','กันยายน','ตุลาคม','พฤศจิกายน','ธันวาคม'];
+                const filename = `เบิกเงิน_${emp.firstname}_${emp.lastname}_${THAI_MONTHS[month-1]}_${year+543}.docx`;
+
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = filename;
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                setTimeout(() => URL.revokeObjectURL(url), 1000);
+
+                alert(`ส่งออกสำเร็จ!\nไฟล์: ${filename}\nจำนวน ${Object.keys(dayMap).length} วันทำงาน`);
+            } catch (err) {
+                console.error('Export docx error:', err);
+                alert('เกิดข้อผิดพลาดในการส่งออก: ' + err.message);
+            }
+        }
+
         // Close popup when clicking outside
         document.addEventListener('click', function(event) {
             const popup = document.getElementById('claim-popup');
